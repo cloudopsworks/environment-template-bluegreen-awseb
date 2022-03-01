@@ -1,0 +1,51 @@
+##
+# (c) 2021 - CloudopsWorks OÜ - https://docs.cloudops.works/
+#
+module "MODULE_NAME_blue" {
+  count            = local.MODULE_NAME_blue_enabled ? 1 : 0
+  source           = "./modules/aws-elasticbeanstalk-deploy"
+  region           = var.region
+  sts_assume_role  = var.sts_assume_role
+
+  release_name     = local.MODULE_NAME.release_name
+  namespace        = var.namespace
+  solution_stack   = local.MODULE_NAME.solution_stack
+  # Solution stack is one of:
+  #   java      = "^64bit Amazon Linux 2 (.*) Corretto 8(.*)$"
+  #   java11    = "^64bit Amazon Linux 2 (.*) Corretto 11(.*)$"
+  #   node      = "^64bit Amazon Linux 2 (.*) Node.js 12(.*)$"
+  #   node14    = "^64bit Amazon Linux 2 (.*) Node.js 14(.*)$"
+  #   go        = "^64bit Amazon Linux 2 (.*) Go (.*)$"
+  #   docker    = "^64bit Amazon Linux 2 (.*) Docker (.*)$"
+  #   docker-m  = "^64bit Amazon Linux 2 (.*) Multi-container Docker (.*)$"
+  #   java-amz1 = "^64bit Amazon Linux (.*)$ running Java 8(.*)$"
+  #   node-amz1 = "^64bit Amazon Linux (.*)$ running Node.js(.*)$"
+
+  application_version_label = module.MODULE_NAME_version.application_version_label
+
+  private_subnets = local.MODULE_NAME.private_subnets
+  public_subnets = local.MODULE_NAME.public_subnets
+  vpc_id = local.MODULE_NAME.vpc_id
+  server_types = local.MODULE_NAME.server_types
+
+  beanstalk_application          = local.MODULE_NAME.beanstalk_application
+  beanstalk_ec2_key              = local.MODULE_NAME.beanstalk_ec2_key
+  beanstalk_ami_id               = local.MODULE_NAME.beanstalk_ami_id
+  beanstalk_instance_port        = local.MODULE_NAME.beanstalk_instance_port
+  beanstalk_enable_spot          = local.MODULE_NAME.beanstalk_enable_spot
+  beanstalk_default_retention    = local.MODULE_NAME.beanstalk_default_retention
+  beanstalk_instance_volume_size = local.MODULE_NAME.beanstalk_instance_volume_size
+  beanstalk_instance_volume_type = local.MODULE_NAME.beanstalk_instance_volume_type
+
+  load_balancer_public             = local.MODULE_NAME.load_balancer_public
+  load_balancer_log_bucket         = local.load_balancer_log_bucket
+  load_balancer_log_prefix         = local.MODULE_NAME.load_balancer_log_prefix
+  load_balancer_ssl_certificate_id = local.MODULE_NAME.load_balancer_ssl_certificate_id
+  load_balancer_alias              = local.MODULE_NAME.load_balancer_alias
+
+  ##
+  # Optional variable for mapping ports to backend ports:
+  port_mappings = local.MODULE_NAME.port_mappings
+
+}
+

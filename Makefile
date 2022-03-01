@@ -15,45 +15,39 @@ PLATFORM :=
 .PHONY: module.tf
 
 module.tf:
-	@if [ ! -f $(TARGET)-module.tf ] ; then \
-		echo "Module $(TARGET)-module.tf not found... copying from template" ; \
-		cp template-module.tf_template $(TARGET)-module.tf ; \
+	@if [ ! -f $(TARGET)-module-version.tf ] ; then \
+		echo "Module $(TARGET)-module-version.tf not found... copying from templates" ; \
+		cp template-module-version.tf_template $(TARGET)-module-version.tf ; \
+		cp template-module-blue.tf_template $(TARGET)-module-blue.tf ; \
+		cp template-module-green.tf_template $(TARGET)-module-green.tf ; \
+		cp template-deploy-blue.tf_template $(TARGET)-deploy-blue.tf ; \
 		mkdir -p values/${TARGET}/ ; \
 		touch values/$(TARGET)/.placeholder ; \
-	else echo "Module $(TARGET)-module.tf found... all OK" ; \
+	else echo "Module $(TARGET)-module-version.tf found... all OK" ; \
 	fi
-# ifeq "" "$(T)"
-# 	$(info )
-# ifeq ($(OS),Darwin)
-# else ifeq ($(OS),Linux)
-# else
-# 	echo "platfrom $(OS) not supported to release from"
-# 	exit -1
-# endif
-# else
-# 	$(info )
-# endif
 
 version: VERSION module.tf
 ifeq ($(OS),Darwin)
-	sed -i "" -e "s/MODULE_NAME/$(TARGET)/g" $(TARGET)-module.tf
-	sed -i "" -e "s/source_name[ \t]*=.*/source_name = \"$(CHART)\"/" $(TARGET)-module.tf
-	sed -i "" -e "s/source_version[ \t]*=.*/source_version = \"$(RELEASE_VERSION)\"/" $(TARGET)-module.tf
+	sed -i "" -e "s/MODULE_NAME/$(TARGET)/g" $(TARGET)-module-version.tf
+	sed -i "" -e "s/MODULE_NAME/$(TARGET)/g" $(TARGET)-module-blue.tf
+	sed -i "" -e "s/MODULE_NAME/$(TARGET)/g" $(TARGET)-module-green.tf
+	sed -i "" -e "s/source_name[ \t]*=.*/source_name = \"$(CHART)\"/" $(TARGET)-module-version.tf
+	sed -i "" -e "s/source_version[ \t]*=.*/source_version = \"$(RELEASE_VERSION)\"/" $(TARGET)-module-version.tf
 	sed -i "" -e "s/release_name[ \t]*=.*/release_name = \"$(TARGET)\"/" $(TARGET)-module.tf
-	sed -i "" -e "s/load_balancer_log_prefix[ \t]*=.*/load_balancer_log_prefix = \"$(TARGET)\"/" $(TARGET)-module.tf
-	sed -i "" -e "s/load_balancer_alias[ \t]*=.*/load_balancer_alias = \"$(TARGET)\-ingress\"/" $(TARGET)-module.tf
+	sed -i "" -e "s/load_balancer_log_prefix[ \t]*=.*/load_balancer_log_prefix = \"$(TARGET)\"/" $(TARGET)-module-version.tf
+	sed -i "" -e "s/load_balancer_alias[ \t]*=.*/load_balancer_alias = \"$(TARGET)\-ingress\"/" $(TARGET)-module-version.tf
 	@if [ "$(PLATFORM)" != "" ] ; then \
-		sed -i "" -e "s/SOLUTION_STACK/$(PLATFORM)/g" $(TARGET)-module.tf ; \
+		sed -i "" -e "s/SOLUTION_STACK/$(PLATFORM)/g" $(TARGET)-module-version.tf ; \
 	fi
 else ifeq ($(OS),Linux)
-	sed -i -e "s/MODULE_NAME/$(TARGET)/g" $(TARGET)-module.tf
-	sed -i -e "s/source_name[ \t]*=.*/source_name = \"$(CHART)\"/" $(TARGET)-module.tf
-	sed -i -e "s/source_version[ \t]*=.*/source_version = \"$(RELEASE_VERSION)\"/" $(TARGET)-module.tf
+	sed -i -e "s/MODULE_NAME/$(TARGET)/g" $(TARGET)-module-version.tf
+	sed -i -e "s/source_name[ \t]*=.*/source_name = \"$(CHART)\"/" $(TARGET)-module-version.tf
+	sed -i -e "s/source_version[ \t]*=.*/source_version = \"$(RELEASE_VERSION)\"/" $(TARGET)-module-version.tf
 	sed -i -e "s/release_name[ \t]*=.*/release_name = \"$(TARGET)\"/" $(TARGET)-module.tf
-	sed -i -e "s/load_balancer_log_prefix[ \t]*=.*/load_balancer_log_prefix = \"$(TARGET)\"/" $(TARGET)-module.tf
-	sed -i -e "s/load_balancer_alias[ \t]*=.*/load_balancer_alias = \"$(TARGET)\-ingress\"/" $(TARGET)-module.tf
+	sed -i -e "s/load_balancer_log_prefix[ \t]*=.*/load_balancer_log_prefix = \"$(TARGET)\"/" $(TARGET)-module-version.tf
+	sed -i -e "s/load_balancer_alias[ \t]*=.*/load_balancer_alias = \"$(TARGET)\-ingress\"/" $(TARGET)-module-version.tf
 	@if [ "$(PLATFORM)" != "" ] ; then \
-		sed -i -e "s/SOLUTION_STACK/$(PLATFORM)/g" $(TARGET)-module.tf ; \
+		sed -i -e "s/SOLUTION_STACK/$(PLATFORM)/g" $(TARGET)-module-version.tf ; \
 	fi
 else
 	echo "platfrom $(OS) not supported to release from"
@@ -73,7 +67,6 @@ endif
 
 clean:
 	rm -f VERSION
-
 
 init-template:
 	@if [ ! -f terraform.tfvars ] ; then \
