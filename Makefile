@@ -43,7 +43,7 @@ else ifeq ($(OS),Linux)
 	sed -i -e "s/MODULE_NAME/$(TARGET)/g" $(TARGET)-module-version.tf
 	sed -i -e "s/source_name[ \t]*=.*/source_name = \"$(CHART)\"/" $(TARGET)-module-version.tf
 	sed -i -e "s/source_version[ \t]*=.*/source_version = \"$(RELEASE_VERSION)\"/" $(TARGET)-module-version.tf
-	sed -i -e "s/release_name[ \t]*=.*/release_name = \"$(TARGET)\"/" $(TARGET)-module.tf
+	sed -i -e "s/release_name[ \t]*=.*/release_name = \"$(TARGET)\"/" $(TARGET)-module-version.tf
 	sed -i -e "s/load_balancer_log_prefix[ \t]*=.*/load_balancer_log_prefix = \"$(TARGET)\"/" $(TARGET)-module-version.tf
 	sed -i -e "s/load_balancer_alias[ \t]*=.*/load_balancer_alias = \"$(TARGET)\-ingress\"/" $(TARGET)-module-version.tf
 	@if [ "$(PLATFORM)" != "" ] ; then \
