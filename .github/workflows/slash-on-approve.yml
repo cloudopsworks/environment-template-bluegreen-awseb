@@ -39,7 +39,7 @@ jobs:
             } 
 
             const output = `Approval Requested for Pull request.
-            Pull request mergeable?: \`thepull.mergeable\`
+            Pull request mergeable?: \`${thepull.mergeable}\`
             Approved by: \`${author}\`
             
             *Action: \`${{ github.event_name }}\`, Working Directory: \`${{ env.tf_actions_working_dir }}\`, Workflow: \`${{ github.workflow }}\`*`;
@@ -52,11 +52,42 @@ jobs:
 
             var is_approved = false;
 
-            for (const aUser of reviewers.users ) {
-              if( aUser.login == author ) {
-                is_approved = true;
-                break;
+            var labels = [];
+            labels = github.issues.listLabelsOnIssue(
+              issue_number: pull_request_number,
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            )
+
+            var proceed_with_users = false
+
+            for (const aLabel of labels) {
+              if ( aLabel.name == 'blue-green/new' || aLabel.name == 'blue-green/complete' ) {
+                proceed_with_users = true
+              } else {
+                github.issues.addLabels(
+                  issue_number: pull_request_number,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  labels: [ 'do-not-merge' ]
+                )
               }
+            }
+
+            if ( proceed_with_users ) {
+              for (const aUser of reviewers.users ) {
+                if( aUser.login == author ) {
+                  is_approved = true;
+                  break;
+                }
+              }
+            } else {
+              github.issues.createComment({
+                issue_number: pull_request_number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: "Proceed with next step for Blue/Green deployment."
+              });
             }
 
             if ( is_approved ) {

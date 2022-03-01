@@ -1,6 +1,6 @@
 # (c) 2021 - CloudopsWorks OÜ - https://docs.cloudops.works/
 #
-name: Forward Environment Deploy
+name: Environment Deploy
 on:
   push:
     branches:

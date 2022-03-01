@@ -1,7 +1,7 @@
 ##
 # (c) 2021 - CloudopsWorks OÜ - https://docs.cloudops.works/
 #
-name: Forward Environment Plan on Pull request
+name: Environment Plan on Pull request
 on:
   pull_request:
     
@@ -72,6 +72,50 @@ jobs:
         id: validate
         run: terraform validate -no-color
 
+      - name: Extract Current version from terraform state
+        id: current_version
+        continue-on-error: true
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.TF_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}
+        run: |
+          eval $(cat VERSION | grep TARGET)
+          current_ver=$(terraform output -raw ${TARGET}_current_version)
+          ret=$?
+          if [ $ret -eq 0] ; then
+            echo "::set-output name=result::$current_ver"
+          else
+            echo "::set-output name=result::"
+          fi
+
+      - name: Blue Green Deployment staging check
+        id: bluegreen
+        run: |
+          label=
+          nextlabel=
+          switch=
+          eval $(cat VERSION | grep TARGET)
+          current_ver="${{ steps.current_version.outputs.result }}"
+          if [[ "$current_ver" == "" ]] ; then
+            label="blue"
+            nextlabel="blue-green/new"
+            switch=0
+          else
+            if [ -f ${TARGET}-deploy-blue.tf ] ; then
+              label="blue"
+              nextlabel="blue-green/green"
+              switch=1
+            fi
+            if [ -f ${TARGET}-deploy-green.tf ] ; then
+              label="green"
+              nextlabel="blue"
+              switch=1
+            fi
+          fi
+          echo "::set-output name=switch::${switch}"
+          echo "::set-output name=nextlabel::${nextlabel}"
+          echo "::set-output name=label::${label}"
+
       - name: Create Plan Directory
         run: mkdir -p ./.plans
       - name: Terraform Plan
@@ -141,24 +185,34 @@ jobs:
           echo "::set-output name=count::$count"
           echo "::set-output name=as_json::$reviewers_as_json"
 
-      - uses: actions/github-script@v4
+      - name: Add review and approval labels
+        uses: actions/github-script@v4
         if: ${{ steps.check_automatic.outputs.autoapprove != 'true' }}
         with:
           github-token: ${{secrets.BOT_TOKEN}}
           script: |
-            const reviewers_json=JSON.parse('${{ steps.reviewers.outputs.as_json }}')
-            const reviewers_count=${{ steps.reviewers.outputs.count }}
+            const reviewers_json=JSON.parse('${{ steps.reviewers.outputs.as_json }}');
+            const reviewers_count=${{ steps.reviewers.outputs.count }};
+            const label='${{ steps.bluegreen.outputs.label }}';
+            const nextlabel='${{ steps.bluegreen.outputs.nextlabel }}';
+            const labels = ['approval-required','review-required'];
+
+            if ( label != '' )
+              labels.push(label);
+
+            if ( nextlabel != '' )
+              labels.push(nextlabel)
 
             github.pulls.requestReviewers({
               pull_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
               reviewers: reviewers_json
-            })
+            });
 
             github.issues.addLabels({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              labels: ['approval-required','review-required']
-            })
+              labels: labels
+            });
