@@ -8,7 +8,7 @@ module "MODULE_NAME_green" {
   sts_assume_role  = var.sts_assume_role
 
   release_name     = local.MODULE_NAME.release_name
-  namespace        = var.namespace
+  namespace        = "${var.namespace}-green"
   solution_stack   = local.MODULE_NAME.solution_stack
   # Solution stack is one of:
   #   java      = "^64bit Amazon Linux 2 (.*) Corretto 8(.*)$"
