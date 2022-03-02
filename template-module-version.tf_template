@@ -39,7 +39,6 @@ locals {
     load_balancer_log_bucket         = local.load_balancer_log_bucket
     load_balancer_log_prefix         = "<RELEASE-NAME>"
     load_balancer_ssl_certificate_id = "EXISTING CERTIFICATE"
-    load_balancer_alias              = "" # "OVERRIDE LB ALIAS"
 
     port_mappings = []
     # Sample:

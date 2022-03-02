@@ -41,8 +41,7 @@ module "MODULE_NAME_green" {
   load_balancer_log_bucket         = local.load_balancer_log_bucket
   load_balancer_log_prefix         = local.MODULE_NAME.load_balancer_log_prefix
   load_balancer_ssl_certificate_id = local.MODULE_NAME.load_balancer_ssl_certificate_id
-  load_balancer_alias              = local.MODULE_NAME.load_balancer_alias
-
+  
   ##
   # Optional variable for mapping ports to backend ports:
   port_mappings = local.MODULE_NAME.port_mappings
