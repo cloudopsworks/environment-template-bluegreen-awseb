@@ -1,8 +1,8 @@
 # Local .terraform directories
 **/.terraform/*
 
-# Version file exclude - needed for Pull requests
-# VERSION
+# Version file exclude
+VERSION
 
 # .tfstate files
 *.tfstate
