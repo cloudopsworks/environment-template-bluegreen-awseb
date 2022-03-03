@@ -1,6 +1,6 @@
 locals {
   MODULE_NAME_blue_enabled  = true
-  MODULE_NAME_blue_version  = "PINNED_VERSION"
+  MODULE_NAME_blue_version  = ""
   MODULE_NAME_green_enabled = true
-  MODULE_NAME_green_version = "PINNED_VERSION"
+  MODULE_NAME_green_version = ""
 }

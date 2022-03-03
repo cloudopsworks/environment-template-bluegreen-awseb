@@ -9,6 +9,8 @@ RELEASE_VERSION :=
 TARGET :=
 CHART :=
 PLATFORM :=
+PINNED_VERSION :=
+TEMPLATED :=
 
 .PHONY: VERSION
 .PHONY: version
@@ -42,10 +44,7 @@ ifeq ($(OS),Darwin)
 		sed -i "" -e "s/MODULE_NAME/$(TARGET)/g" $(TARGET)-deploy-blue.tf ; \
 	fi
 	@if [ -f $(TARGET)-deploy-green.tf ] ; then \
-		sed -i "" -e "s/MODULE_NAME/$(TARGET)/g" $(TARGET)-deploy-blue.tf ; \
-	fi
-	@if [ -f $(TARGET)-deploy-both.tf ] ; then \
-		sed -i "" -e "s/MODULE_NAME/$(TARGET)/g" $(TARGET)-deploy-blue.tf ; \
+		sed -i "" -e "s/MODULE_NAME/$(TARGET)/g" $(TARGET)-deploy-green.tf ; \
 	fi
 else ifeq ($(OS),Linux)
 	sed -i -e "s/MODULE_NAME/$(TARGET)/g" $(TARGET)-module-version.tf
@@ -62,15 +61,82 @@ else ifeq ($(OS),Linux)
 		sed -i -e "s/MODULE_NAME/$(TARGET)/g" $(TARGET)-deploy-blue.tf ; \
 	fi
 	@if [ -f $(TARGET)-deploy-green.tf ] ; then \
-		sed -i -e "s/MODULE_NAME/$(TARGET)/g" $(TARGET)-deploy-blue.tf ; \
-	fi
-	@if [ -f $(TARGET)-deploy-both.tf ] ; then \
-		sed -i -e "s/MODULE_NAME/$(TARGET)/g" $(TARGET)-deploy-blue.tf ; \
+		sed -i -e "s/MODULE_NAME/$(TARGET)/g" $(TARGET)-deploy-green.tf ; \
 	fi
 else
 	echo "platfrom $(OS) not supported to release from"
 	exit -1
 endif
+
+deploy-template:
+ifeq ($(OS),Darwin)
+	@if [ -f $(TARGET)-deploy-$(TEMPLATED).tf ] ; then \
+		sed -i "" -e "s/MODULE_NAME/$(TARGET)/g" $(TARGET)-deploy-$(TEMPLATED).tf ; \
+	else \
+	  cp template-deploy-$(TEMPLATED).tf_template $(TARGET)-deploy-$(TEMPLATED).tf ; \
+		sed -i "" -e "s/MODULE_NAME/$(TARGET)/g" $(TARGET)-deploy-$(TEMPLATED).tf ; \
+	fi
+else ifeq ($(OS),Linux)
+	@if [ -f $(TARGET)-deploy-$(TEMPLATED).tf ] ; then \
+		sed -i -e "s/MODULE_NAME/$(TARGET)/g" $(TARGET)-deploy-$(TEMPLATED).tf ; \
+	else \
+	  cp template-deploy-$(TEMPLATED).tf_template $(TARGET)-deploy-$(TEMPLATED).tf ; \
+		sed -i -e "s/MODULE_NAME/$(TARGET)/g" $(TARGET)-deploy-$(TEMPLATED).tf ; \
+	fi
+else
+	echo "platfrom $(OS) not supported to release from"
+	exit -1
+endif
+
+version-pin:
+ifeq ($(OS),Darwin)
+	@if [ -f $(TARGET)-deploy-both.tf ] ; then \
+		sed -i "" -e "s/$(TARGET)_$(TEMPLATED)_version[ \t]*=.*/$(TARGET)_$(TEMPLATED)_version = \"$(PINNED_VERSION)\"/g" $(TARGET)-deploy-both.tf ; \
+	else \
+		echo "cannot pin version only available running both green&blue env" ; \
+		exit -1 ; \
+	fi
+else ifeq ($(OS),Linux)
+	@if [ -f $(TARGET)-deploy-both.tf ] ; then \
+		sed -i -e "s/$(TARGET)_$(TEMPLATED)_version[ \t]*=.*/$(TARGET)_$(TEMPLATED)_version = \"$(PINNED_VERSION)\"/g" $(TARGET)-deploy-both.tf ; \
+	else \
+		echo "cannot pin version only available running both green&blue env" ; \
+		exit -1 ; \
+	fi
+else
+	echo "platfrom $(OS) not supported to release from"
+	exit -1
+endif
+
+deploy-blue: TEMPLATED = blue
+deploy-blue: VERSION deploy-template
+
+deploy-green: TEMPLATED = green
+deploy-green: VERSION deploy-template
+
+deploy-bluegreen: TEMPLATED = both
+deploy-bluegreen: VERSION deploy-template
+
+blueversion-pin: TEMPLATED = blue
+blueversion-pin: VERSION version-pin
+
+greenverion-pin: TEMPLATED = green
+greenverion-pin: VERSION version-pin
+
+clean-blue: VERSION
+	@if [ -f $(TARGET)-deploy-blue.tf ] ; then \
+		rm $(TARGET)-deploy-blue.tf ; \
+	fi
+
+clean-green: VERSION
+	@if [ -f $(TARGET)-deploy-green.tf ] ; then \
+		rm $(TARGET)-deploy-green.tf ; \
+	fi
+
+clean-both: VERSION
+	@if [ -f $(TARGET)-deploy-both.tf ] ; then \
+		rm $(TARGET)-deploy-both.tf ; \
+	fi
 
 VERSION:
 ifeq ($(VERFOUND),1)
@@ -79,6 +145,7 @@ override RELEASE_VERSION := $(shell cat VERSION | grep VERSION | cut -f 2 -d "="
 override TARGET := $(shell cat VERSION | grep TARGET | cut -f 2 -d "=")
 override CHART := $(shell cat VERSION | grep CHART | cut -f 2 -d "=")
 override PLATFORM := $(shell cat VERSION | grep PLATFORM | cut -f 2 -d "=")
+override PINNED_VERSION := $(shell cat VERSION | grep PINNED_VERSION | cut -f 2 -d "=")
 else
 	$(error Hey $@ File not found)
 endif

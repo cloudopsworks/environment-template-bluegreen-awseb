@@ -1,7 +1,7 @@
 ##
 # (c) 2021 - CloudopsWorks OÜ - https://docs.cloudops.works/
 #
-name: Environment Labeling even tracking for Blue/Green Stepping
+name: Environment Labeling event tracking for Blue/Green Stepping
 on:
   pull_request_target:
     types:
@@ -17,7 +17,7 @@ permissions:
   checks: write
 
 jobs:
-  automerge:
+  label-track:
     runs-on: ubuntu-latest
     steps:
       - name: Test
