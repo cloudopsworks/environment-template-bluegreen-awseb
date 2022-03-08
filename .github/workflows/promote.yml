@@ -34,12 +34,27 @@ jobs:
       # Installs Terraform
       - uses: hashicorp/setup-terraform@v1
 
-      - name: Push change for release
+      - name: Create version File
         run: |
           echo "VERSION=${{ github.event.client_payload.promote.version }}" > VERSION
           echo "CHART=${{ github.event.client_payload.promote.repository }}" >> VERSION
           echo "TARGET=${{ github.event.client_payload.promote.releasename }}" >> VERSION
           echo "PLATFORM=${{ github.event.client_payload.promote.platform }}" >> VERSION
+
+      - name: Check which tier we are
+        id: current-tier
+        run: |
+          tier=
+          
+          if [ -f .tier_enabled ] ; then
+            tier=$(cat .tier_enabled)
+
+            make switch-from-$tier
+          fi
+          echo "::set-output name=label::$tier"
+
+      - name: Push change for release
+        run: |
           make version
 
       # Do Tidy on terraform Files
@@ -61,6 +76,7 @@ jobs:
           #base: "master"
           title: "Promote ${{ github.event.client_payload.promote.releasename }} v${{ github.event.client_payload.promote.version }}"
           token: ${{ secrets.BOT_TOKEN }}
+          labels: ${{ steps.current-tier.outputs.label }}
           body: |
             Promotion of ${{ github.event.client_payload.promote.releasename }} v${{ github.event.client_payload.promote.version }}
             Automatic Merge will be performed upon approval

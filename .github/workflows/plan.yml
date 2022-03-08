@@ -72,59 +72,59 @@ jobs:
         id: validate
         run: terraform validate -no-color
 
-      - name: Extract Current version from terraform state
-        id: current_version
-        continue-on-error: true
+      - name: Check Workspaces
+        id: workspace
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.TF_AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}
+          GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
         run: |
-          ref="${{ github.head_ref }}"
-          trimref="${ref%-v*[0-9]\.*[0-9]\.*[0-9]}"
-          TARGET="${trimref##promote-}"
-          current_ver=$(terraform output -raw ${TARGET}_current_version)
-          ret=$?
-          if [ $ret -eq 0 ] ; then
-            echo "::set-output name=result::$current_ver"
-          else
-            echo "::set-output name=result::"
-          fi
+          terraform workspace list
+
+      - name: Create Workspace BLUE
+        id: blue-workspace
+        if: ${{ ! contains(steps.workspace.outputs.stdout, 'blue') }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.TF_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}
+          GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
+        run: |
+          terraform workspace new blue
+
+      - name: Create Workspace GREEN
+        id: green-workspace
+        if: ${{ ! contains(steps.workspace.outputs.stdout, 'green') }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.TF_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}
+          GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
+        run: |
+          terraform workspace new green
 
       - name: Blue Green Deployment staging check
         id: bluegreen
         run: |
-          label=
-          nextlabel=
-          switch=
-          ref="${{ github.head_ref }}"
-          trimref="${ref%-v*[0-9]\.*[0-9]\.*[0-9]}"
-          TARGET="${trimref##promote-}"
-          current_ver="${{ steps.current_version.outputs.result }}"
-          if [[ "$current_ver" == "" ]] ; then
-            label="blue"
-            nextlabel="blue-green/new"
-            switch=0
-          else
-            if [ -f ${TARGET}-deploy-blue.tf ] ; then
-              label="blue"
-              nextlabel="blue-green/green"
-              switch=1
-            fi
-            if [ -f ${TARGET}-deploy-green.tf ] ; then
-              label="green"
-              nextlabel="blue"
-              switch=1
-            fi
-          fi
-          echo "::set-output name=switch::${switch}"
+          label=$(cat .tier_enabled)
+          old=$(cat .destroy)
+          apply_plan=0
+          nextlabel="blue-green/$label"
+
+          echo "::set-output name=apply_plan::${apply_plan}"
           echo "::set-output name=nextlabel::${nextlabel}"
           echo "::set-output name=label::${label}"
+
+      - name: Terraform Workspace Switch
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.TF_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}
+          GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
+        run: terraform workspace select ${{ steps.bluegreen.outputs.label }}
 
       - name: Create Plan Directory
         run: mkdir -p ./.plans
       - name: Terraform Plan
         id: plan
-        run: terraform plan -no-color -out ./.plans/plan.out
+        run: terraform plan -no-color -var-file=$(cat .tier_enabled).tfvars -out ./.plans/plan.out
         continue-on-error: ${{ steps.check_automatic.outputs.autoapprove != 'true' }}
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.TF_AWS_ACCESS_KEY_ID }}
@@ -132,14 +132,16 @@ jobs:
           HELM_CREDS_USER: ${{ secrets.AZURE_SERVICE_ID }}
           HELM_CREDS_PASSWORD: ${{ secrets.AZURE_SERVICE_SECRET }}
           HELM_EXPERIMENTAL_OCI: "1"
+          GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
 
-      - uses: actions/upload-artifact@v2
-        with:
-          name: environment-release-plan
-          path: ./.plans/plan.out
-          #if-no-files-found: error
+      # - uses: actions/upload-artifact@v2
+      #   with:
+      #     name: environment-release-plan
+      #     path: ./.plans/plan.out
+      #     #if-no-files-found: error
 
-      - uses: actions/github-script@v4
+      - name: Report Plan Output
+        uses: actions/github-script@v4
         if: github.event_name == 'pull_request'
         env:
           PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
@@ -203,9 +205,6 @@ jobs:
             const nextlabel='${{ steps.bluegreen.outputs.nextlabel }}';
             const labels = ['approval-required','review-required'];
             const actor = '${{ github.event.pull_request.user.login }}'
-
-            if ( label != '' )
-              labels.push(label);
 
             if ( nextlabel != '' )
               labels.push(nextlabel)

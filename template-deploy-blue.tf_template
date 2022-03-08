@@ -1,6 +1,0 @@
-locals {
-  MODULE_NAME_blue_enabled  = true
-  MODULE_NAME_blue_version  = ""
-  MODULE_NAME_green_enabled = false
-  MODULE_NAME_green_version = ""
-}

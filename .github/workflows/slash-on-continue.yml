@@ -54,20 +54,6 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}
           GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
 
-      - name: Generate Version File
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.TF_AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}
-          GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
-        run: |
-          ref="${{ steps.the_pull.outputs.result }}"
-          trimref="${ref%-v*[0-9]\.*[0-9]\.*[0-9]}"
-          TARGET="${trimref##promote-}"
-          current_ver=$(terraform output -raw ${TARGET}_current_version)
-          echo "$current_ver"
-          echo "TARGET=$TARGET" > VERSION
-          echo "PINNED_VERSION=$current_ver" >> VERSION
-
       - name: Retrieve Labels for next step
         id: checkpoint
         uses: actions/github-script@v4
@@ -102,35 +88,95 @@ jobs:
 
             return result;
       
-      - name: Switch to both
-        if: fromJSON(steps.checkpoint.outputs.result).switch_both
-        run: |
-          make deploy-bluegreen clean-blue clean-green
-    
-      - name: Blue Version PIN
-        if: fromJSON(steps.checkpoint.outputs.result).is_blue && fromJSON(steps.checkpoint.outputs.result).switch_both
-        run: |
-          make -n blueversion-pin
-          make blueversion-pin
+      - name: Terraform Select Blue Workspace
+        if: fromJSON(steps.checkpoint.outputs.result).to_blue == 1
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.TF_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}
+          GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
+        run: terraform workspace select blue
 
-      - name: Green Version PIN
-        if: fromJSON(steps.checkpoint.outputs.result).is_green && fromJSON(steps.checkpoint.outputs.result).switch_both
-        run: |
-          make greenversion-pin
+      - name: Terraform Select Green Workspace
+        if: fromJSON(steps.checkpoint.outputs.result).to_green == 1
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.TF_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}
+          GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
+        run: terraform workspace select green
 
-      - name: Switch to Green
-        if: fromJSON(steps.checkpoint.outputs.result).to_green && fromJSON(steps.checkpoint.outputs.result).run_both
-        run: |
-          make deploy-green clean-both
+      - name: Create Plan Directory
+        run: mkdir -p ./.plans
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -no-color -var-file=$(cat .tier_enabled).tfvars -out ./.plans/plan.out
+        continue-on-error: false
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.TF_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}
+          HELM_CREDS_USER: ${{ secrets.AZURE_SERVICE_ID }}
+          HELM_CREDS_PASSWORD: ${{ secrets.AZURE_SERVICE_SECRET }}
+          HELM_EXPERIMENTAL_OCI: "1"
+          GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
 
-      - name: Switch to blue
-        if: fromJSON(steps.checkpoint.outputs.result).to_blue && fromJSON(steps.checkpoint.outputs.result).run_both
-        run: |
-          make deploy-blue clean-both
+      - name: Terraform Apply - This happens only if condition
+        id: applyboth
+        run: terraform apply -no-color ./.plans/plan.out
+        continue-on-error: true
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.TF_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}
+          HELM_CREDS_USER: ${{ secrets.AZURE_SERVICE_ID }}
+          HELM_CREDS_PASSWORD: ${{ secrets.AZURE_SERVICE_SECRET }}
+          HELM_EXPERIMENTAL_OCI: "1"
+          GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
 
-      - name: Terraform fmt
-        id: fmt
-        run: terraform fmt
+      - name: Report terraform apply output
+        uses: actions/github-script@v4
+        env:
+          APPLY: "terraform\n${{ steps.applyboth.outputs.stdout }}"
+        with:
+          github-token: ${{ secrets.BOT_TOKEN }}
+          script: |
+            const pull_request_number = '${{ github.event.client_payload.slash_command.args.named.pull_request_number }}';
+            const output = `#### Terraform Apply 📖\`${{ steps.applyboth.outcome }}\`
+            
+            <details><summary>Show apply report</summary>
+            
+            \`\`\`\n
+            ${process.env.APPLY}
+            \`\`\`
+            
+            </details>
+
+            Submit: */continue* in order to continue with next step of Blue/Green Deployment.
+            
+            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Working Directory: \`${{ env.tf_actions_working_dir }}\`, Workflow: \`${{ github.workflow }}\`*`;
+              
+            github.issues.createComment({
+              issue_number: pull_request_number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
+
+      - name: Check Beacon file
+        id: beacon
+        run: |
+          check=
+          if [ -f .beacon ] ; then
+            check=$(cat .beacon)
+          fi
+          echo "::set-output name=check::$check"
+
+      - name: Create Beacon file in order to go next step as Deployed
+        if: steps.beacon.outputs.check == ''
+        run: |
+          make deployed-beacon
+          make open-traffic
+
+      - name: Create Beacon file in order to go next step as Complete
+        if: steps.beacon.outputs.check == 'deployed'
+        run: make completed-beacon
 
       - name: Push change to branch
         run: |
@@ -138,6 +184,7 @@ jobs:
           git config --global user.name "${{ secrets.BOT_USER }}"
           git config --global user.email "${{ secrets.BOT_EMAIL }}"
           git commit -a -m "chore: Pushing changes for this step."
+          git push origin
 
       - name: Label entry at proper step
         uses: actions/github-script@v4

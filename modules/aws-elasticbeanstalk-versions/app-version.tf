@@ -4,14 +4,14 @@
 locals {
   bucket_path     = "${var.release_name}/${var.source_version}/${var.source_name}-${var.source_version}-${var.namespace}.zip"
   config_file_sha = sha1(join("", [for f in fileset(".", "${path.root}/values/${var.release_name}/**") : filesha1(f)]))
+  version_label   = "${var.release_name}-${var.source_version}-${var.namespace}-${upper(substr(local.config_file_sha, 0, 10))}"
 }
 
 resource "aws_elastic_beanstalk_application_version" "app_version" {
   depends_on = [
     null_resource.awscli_program
-    #data.external.awscli_program
   ]
-  name         = "${var.source_name}-${var.source_version}-${var.namespace}-${upper(substr(local.config_file_sha, 0, 10))}"
+  name         = local.version_label
   application  = data.aws_elastic_beanstalk_application.application.name
   description  = "Application ${var.source_name} v${var.source_version} for ${var.namespace} Environment"
   force_delete = false
