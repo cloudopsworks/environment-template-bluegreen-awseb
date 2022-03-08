@@ -1,3 +1,6 @@
+##
+# (c) 2022 - CloudopsWorks OÜ - https://docs.cloudops.works/
+#
 variable "default_version" {
   type        = string
   description = "(Required) Version to be applied during the workspace election."

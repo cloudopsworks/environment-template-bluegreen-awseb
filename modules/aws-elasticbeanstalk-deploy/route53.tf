@@ -31,7 +31,7 @@ resource "aws_route53_record" "app_record_weighted" {
     weight = var.domain_name_weight
   }
 
-  set_identifier = var.release_name
+  set_identifier = "${var.release_name}-${var.namespace}"
   records = [
     aws_elastic_beanstalk_environment.beanstalk_environment.cname
   ]
