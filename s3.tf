@@ -1,3 +1,6 @@
+##
+# (c) 2021 - CloudopsWorks OÜ - https://docs.cloudops.works/
+#
 locals {
   load_balancer_log_bucket    = "${var.default_bucket_prefix}-lb-logs"
   application_versions_bucket = "${var.default_bucket_prefix}-app-versions"
