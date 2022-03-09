@@ -84,7 +84,7 @@ deployed-beacon:
 	echo "deployed" > .beacon
 
 completed-beacon:
-	echo "complete" > .beacon
+	echo "completed" > .beacon
 
 open-traffic:
 ifeq ($(OS),Darwin)

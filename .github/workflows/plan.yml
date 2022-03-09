@@ -203,7 +203,7 @@ jobs:
             const reviewers_count=${{ steps.reviewers.outputs.count }};
             const label='${{ steps.bluegreen.outputs.label }}';
             const nextlabel='${{ steps.bluegreen.outputs.nextlabel }}';
-            const labels = ['approval-required','review-required'];
+            const labels = ['approval-required','review-required','do-not-merge'];
             const actor = '${{ github.event.pull_request.user.login }}'
 
             if ( nextlabel != '' )
