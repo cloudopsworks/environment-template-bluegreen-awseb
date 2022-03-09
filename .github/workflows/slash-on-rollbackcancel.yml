@@ -1,0 +1,199 @@
+##
+# (c) 2021 - CloudopsWorks OÜ - https://docs.cloudops.works/
+#
+name: Slash command on Continue Blue/Green
+on:
+  repository_dispatch:
+    types:
+      - cancel-command
+      - rollback-command
+      - reject-command
+      - close-command
+permissions:
+  issues: write
+  contents: write
+  packages: read
+  statuses: write
+  pull-requests: write
+
+jobs:
+  rollback-and-cancel:
+    runs-on: ubuntu-latest
+    steps:
+      # Install terraform
+      - uses: hashicorp/setup-terraform@v1
+
+      # Get pull request head
+      - name: Get Pull Request HEAD Ref
+        uses: actions/github-script@v4
+        id: the_pull
+        with:
+          github-token: ${{secrets.BOT_TOKEN}}
+          result-encoding: string
+          script: |
+            const pull_request_number = '${{ github.event.client_payload.slash_command.args.named.pull_request_number }}';
+            const {data: thePull} = await github.pulls.get({
+              pull_number: pull_request_number,
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            });
+            return thePull.head.ref;
+
+      # Proceed with checkout of source with all the references (depth=0)  
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          ref: ${{ steps.the_pull.outputs.result }}
+          token: ${{ secrets.BOT_TOKEN }}
+
+      - name: Retrieve tiers to run
+        id: tiers_torun
+        run: |
+          tier1=
+          tier2=
+
+          if [ -f .tier_enabled ] ; then
+            tier1=$(cat .tier_enabled) 
+          fi
+
+          if [ -f .destroy ] ; then
+            tier2=$(cat .destroy)
+          fi
+
+          echo "::set-output name=tier1::$tier1"
+          echo "::set-output name=tier2::$tier2"
+
+      - name: Terraform Init
+        id: init
+        run: terraform init
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.TF_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}
+          GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
+
+      - name: Rollback Changes for apply afterwards
+        run: make rollback
+      
+      - name: Create Plan Directory
+        run: mkdir -p ./.plans
+      - name: Terraform Select Tier1 Workspace
+        if: steps.tiers_torun.outputs.tier1 != ''
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.TF_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}
+          GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
+        run: terraform workspace select ${{ steps.tiers_torun.outputs.tier1 }}
+
+      - name: Terraform Plan Tier1 Rollback Traffic
+        id: plan-tier1
+        if: steps.tiers_torun.outputs.tier1 != ''
+        run: terraform plan -no-color -var-file=${{ steps.tiers_torun.outputs.tier1 }}.tfvars -out ./.plans/plan.out
+        continue-on-error: false
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.TF_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}
+          HELM_CREDS_USER: ${{ secrets.AZURE_SERVICE_ID }}
+          HELM_CREDS_PASSWORD: ${{ secrets.AZURE_SERVICE_SECRET }}
+          HELM_EXPERIMENTAL_OCI: "1"
+          GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
+
+      - name: Terraform Apply Tier1
+        id: apply-tier1
+        if: steps.tiers_torun.outputs.tier1 != ''
+        run: terraform apply -no-color ./.plans/plan.out
+        continue-on-error: true
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.TF_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}
+          HELM_CREDS_USER: ${{ secrets.AZURE_SERVICE_ID }}
+          HELM_CREDS_PASSWORD: ${{ secrets.AZURE_SERVICE_SECRET }}
+          HELM_EXPERIMENTAL_OCI: "1"
+          GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
+
+      - name: Terraform Select Tier2 Workspace
+        if: steps.tiers_torun.outputs.tier2 != ''
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.TF_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}
+          GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
+        run: terraform workspace select ${{ steps.tiers_torun.outputs.tier2 }}
+
+      - name: Terraform Plan Tier2 Rollback Traffic
+        id: plan-tier2
+        if: steps.tiers_torun.outputs.tier2 != ''
+        run: terraform plan -no-color -var-file=${{ steps.tiers_torun.outputs.tier2 }}.tfvars -out ./.plans/plan.out
+        continue-on-error: false
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.TF_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}
+          HELM_CREDS_USER: ${{ secrets.AZURE_SERVICE_ID }}
+          HELM_CREDS_PASSWORD: ${{ secrets.AZURE_SERVICE_SECRET }}
+          HELM_EXPERIMENTAL_OCI: "1"
+          GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
+
+      - name: Terraform Apply Tier2
+        id: apply-tier2
+        if: steps.tiers_torun.outputs.tier2 != ''
+        run: terraform apply -no-color ./.plans/plan.out
+        continue-on-error: true
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.TF_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}
+          HELM_CREDS_USER: ${{ secrets.AZURE_SERVICE_ID }}
+          HELM_CREDS_PASSWORD: ${{ secrets.AZURE_SERVICE_SECRET }}
+          HELM_EXPERIMENTAL_OCI: "1"
+          GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
+
+      - name: Report terraform apply output
+        uses: actions/github-script@v4
+        env:
+          PLAN1: "terraform plan ${{ steps.tier_torun.outputs.tier1 }}\n${{ steps.plan-tier1.outputs.stdout }}"
+          APPLY1: "terraform apply ${{ steps.tier_torun.outputs.tier1 }}\n${{ steps.apply-tier1.outputs.stdout }}"
+          PLAN2: "terraform plan ${{ steps.tier_torun.outputs.tier2 }}\n${{ steps.plan-tier2.outputs.stdout }}"
+          APPLY2: "terraform apply ${{ steps.tier_torun.outputs.tier2 }}\n${{ steps.apply-tier2.outputs.stdout }}"
+        with:
+          github-token: ${{ secrets.BOT_TOKEN }}
+          script: |
+            const pull_request_number = '${{ github.event.client_payload.slash_command.args.named.pull_request_number }}';
+            const output = `#### Terraform Plan ${{ steps.tier_torun.outputs.tier1 }}📖\`${{ steps.plan-tier1.outcome }}\`
+            #### Terraform Apply ${{ steps.tier_torun.outputs.tier1 }}📖\`${{ steps.apply-tier1.outcome }}\`
+            #### Terraform Plan ${{ steps.tier_torun.outputs.tier2 }}📖\`${{ steps.plan-tier2.outcome }}\`
+            #### Terraform Apply ${{ steps.tier_torun.outputs.tier2 }}📖\`${{ steps.apply-tier2.outcome }}\`
+            <details><summary>Show plan/apply report</summary>
+            
+            \`\`\`\n
+            ${process.env.PLAN1}
+            ---\n
+            ${process.env.APPLY1}
+            ---\n
+            ---\n
+            ${process.env.PLAN2}
+            ---\n
+            ${process.env.APPLY2}
+            \`\`\`
+            
+            </details>
+
+            Rollback Complete Pull request may be closed!
+            
+            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Working Directory: \`${{ env.tf_actions_working_dir }}\`, Workflow: \`${{ github.workflow }}\`*`;
+              
+            github.issues.createComment({
+              issue_number: pull_request_number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            });
+
+            const {data: thePull} = await github.pulls.get({
+              pull_number: pull_request_number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            })
+
+            github.pulls.update({
+              pull_number: pull_request_number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'closed',
+            });

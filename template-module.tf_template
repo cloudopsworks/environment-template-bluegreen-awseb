@@ -1,6 +1,23 @@
 ##
 # (c) 2021 - CloudopsWorks OÜ - https://docs.cloudops.works/
 #
+
+##
+# This module to manage DNS association.
+#
+module "MODULE_NAME_dns" {
+  depends_on = [
+    module.MODULE_NAME_app
+  ]
+  count  = terraform.workspace != "default" ? 1 : 0
+
+  domain_name                 = "DOMAIN WHERE TO CREATE ALIAS"
+  domain_name_alias_prefix    = "DOMAIN NAME ALIAS"
+  domain_name_weight          = var.dns_weight
+  beanstalk_environment_cname = module.MODULE_NAME_app.environment_cname
+}
+
+
 module "MODULE_NAME_version" {
   count            = terraform.workspace != "default" ? 1 : 0
   source           = "./modules/aws-elasticbeanstalk-versions"
@@ -73,11 +90,6 @@ module "MODULE_NAME_app" {
   load_balancer_ssl_certificate_id = "EXISTING CERTIFICATE"
   #load_balancer_alias              = "OVERRIDE LB ALIAS"
 
-  ##
-  # Optionals: uncomment to leave this module to manage DNS association.
-  # domain_name              = "DOMAIN WHERE TO CREATE ALIAS"
-  # domain_name_alias_prefix = "DOMAIN NAME ALIAS"
-  # domain_name_weight       = var.dns_weight
   ##
   # Optional variable for mapping ports to backend ports:
   # port_mappings = [

@@ -9,6 +9,7 @@ RELEASE_VERSION :=
 TARGET :=
 CHART :=
 PLATFORM :=
+DESTROYFOUND := $(shell [ -f .destroy ] && echo 1 || echo 0)
 
 .PHONY: VERSION
 .PHONY: version
@@ -17,6 +18,7 @@ PLATFORM :=
 .PHONY: deployed-beacon
 .PHONY: completed-beacon
 .PHONY: switched-beacon
+.PHONY: rollback-tier
 
 module.tf:
 	@if [ ! -f $(TARGET)-module.tf ] ; then \
@@ -128,17 +130,23 @@ else
 	exit -1
 endif
 
-rollback:
+rollback-tier:
+ifeq ($(DESTROYFOUND),1)
+ifeq ($(OS),Darwin)
+		sed -i "" -e "s/dns_weight[ \t]*=.*/dns_weight      = 10/g" $(shell cat .destroy).tfvars
+else ifeq ($(OS),Linux)
+		sed -i -e "s/dns_weight[ \t]*=.*/dns_weight      = 10/g" $(shell cat .destroy).tfvars
+else
+	echo "platfrom $(OS) not supported to release from"
+	exit -1
+endif
+endif
+
+rollback: rollback-tier
 ifeq ($(OS),Darwin)
 	sed -i "" -e "s/dns_weight[ \t]*=.*/dns_weight      = 0/g" $(shell cat .tier_enabled).tfvars
-	@if [ ! -f .destroy ] ; then \
-		sed -i "" -e "s/dns_weight[ \t]*=.*/dns_weight      = 10/g" $(shell cat .tier_enabled).tfvars \
-	fi
 else ifeq ($(OS),Linux)
 	sed -i -e "s/dns_weight[ \t]*=.*/dns_weight      = 0/g" $(shell cat .tier_enabled).tfvars
-	@if [ ! -f .destroy ] ; then \
-		sed -i -e "s/dns_weight[ \t]*=.*/dns_weight      = 10/g" $(shell cat .tier_enabled).tfvars \
-	fi
 else
 	echo "platfrom $(OS) not supported to release from"
 	exit -1
