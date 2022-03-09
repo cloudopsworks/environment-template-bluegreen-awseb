@@ -2,7 +2,7 @@
 # (c) 2021 - CloudopsWorks OÜ - https://docs.cloudops.works/
 #
 locals {
-  bucket_path     = "${var.release_name}/${var.source_version}/${var.source_name}-${var.source_version}-${var.namespace}.zip"
+  bucket_path     = "${var.release_name}/${var.source_version}/${var.source_name}-${var.source_version}-${var.namespace}-${upper(substr(local.config_file_sha, 0, 10))}.zip"
   config_file_sha = sha1(join("", [for f in fileset(".", "${path.root}/values/${var.release_name}/**") : filesha1(f)]))
   version_label   = "${var.release_name}-${var.source_version}-${var.namespace}-${upper(substr(local.config_file_sha, 0, 10))}"
 }
