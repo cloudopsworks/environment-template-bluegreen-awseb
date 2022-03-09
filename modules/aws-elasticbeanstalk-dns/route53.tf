@@ -13,7 +13,7 @@ resource "aws_route53_record" "app_record_plain" {
   type    = "CNAME"
   ttl     = var.default_domain_ttl
   records = [
-    aws_elastic_beanstalk_environment.beanstalk_environment.cname
+    var.beanstalk_environment_cname
   ]
 }
 

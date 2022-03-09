@@ -14,10 +14,12 @@ module "MODULE_NAME_dns" {
   region           = var.region
   sts_assume_role  = var.sts_assume_role
 
+  release_name                = "<RELEASE-NAME>"
+  namespace                   = var.namespace
   domain_name                 = "DOMAIN WHERE TO CREATE ALIAS"
   domain_name_alias_prefix    = "DOMAIN NAME ALIAS"
   domain_name_weight          = var.dns_weight
-  beanstalk_environment_cname = module.MODULE_NAME_app.environment_cname
+  beanstalk_environment_cname = module.MODULE_NAME_app.0.environment_cname
 }
 
 
