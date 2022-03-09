@@ -14,6 +14,9 @@ PLATFORM :=
 .PHONY: version
 .PHONY: module.tf
 .PHONY: checktier
+.PHONY: deployed-beacon
+.PHONY: completed-beacon
+.PHONY: switched-beacon
 
 module.tf:
 	@if [ ! -f $(TARGET)-module.tf ] ; then \
@@ -71,13 +74,15 @@ endif
 switch-from-green:
 	echo "blue" > .tier_enabled
 	echo "green" > .destroy
+	@if [ ! -f blue.tfvars ] ; then \
+		cp template-tier.tfvars_template blue.tfvars ; \
+	fi
 
 switch-from-blue:
 	echo "green" > .tier_enabled
 	echo "blue" > .destroy
 	@if [ ! -f green.tfvars ] ; then \
 		cp template-tier.tfvars_template green.tfvars ; \
-		sed -i -e "s/dns_weight[ \t]*=.*/dns_weight      = 0/g" blue.tfvars ; \
 	fi
 
 deployed-beacon:
@@ -86,7 +91,24 @@ deployed-beacon:
 completed-beacon:
 	echo "completed" > .beacon
 
-open-traffic:
+switched-beacon:
+	echo "switched" > .beacon
+
+close-old-traffic: switched-beacon 
+ifeq ($(OS),Darwin)
+	@if [ ! -f .destroy ] ; then \
+		sed -i "" -e "s/dns_weight[ \t]*=.*/dns_weight      = 0/g" $(shell cat .destroy).tfvars ; \
+	fi
+else ifeq ($(OS),Linux)
+	@if [ ! -f .destroy ] ; then \
+		sed -i -e "s/dns_weight[ \t]*=.*/dns_weight      = 0/g" $(shell cat .destroy).tfvars ; \
+	fi
+else
+	echo "platfrom $(OS) not supported to release from"
+	exit -1
+endif
+
+open-new-traffic: deployed-beacon
 ifeq ($(OS),Darwin)
 	sed -i "" -e "s/dns_weight[ \t]*=.*/dns_weight      = 10/g" $(shell cat .tier_enabled).tfvars
 else ifeq ($(OS),Linux)
@@ -105,6 +127,23 @@ else
 	echo "platfrom $(OS) not supported to release from"
 	exit -1
 endif
+
+rollback:
+ifeq ($(OS),Darwin)
+	sed -i "" -e "s/dns_weight[ \t]*=.*/dns_weight      = 0/g" $(shell cat .tier_enabled).tfvars
+	@if [ ! -f .destroy ] ; then \
+		sed -i "" -e "s/dns_weight[ \t]*=.*/dns_weight      = 10/g" $(shell cat .tier_enabled).tfvars \
+	fi
+else ifeq ($(OS),Linux)
+	sed -i -e "s/dns_weight[ \t]*=.*/dns_weight      = 0/g" $(shell cat .tier_enabled).tfvars
+	@if [ ! -f .destroy ] ; then \
+		sed -i -e "s/dns_weight[ \t]*=.*/dns_weight      = 10/g" $(shell cat .tier_enabled).tfvars \
+	fi
+else
+	echo "platfrom $(OS) not supported to release from"
+	exit -1
+endif
+
 
 VERSION:
 ifeq ($(VERFOUND),1)

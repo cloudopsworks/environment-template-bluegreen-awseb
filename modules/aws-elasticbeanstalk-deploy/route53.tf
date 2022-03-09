@@ -8,7 +8,7 @@ data "aws_route53_zone" "app_domain" {
 }
 
 resource "aws_route53_record" "app_record_plain" {
-  count = var.domain_name_alias_prefix != "" && var.domain_name_weight <= 0 ? 1 : 0
+  count = var.domain_name_alias_prefix != "" && var.domain_name_weight < 0 ? 1 : 0
 
   zone_id = data.aws_route53_zone.app_domain.0.id
   name    = "${var.domain_name_alias_prefix}.${var.domain_name}"

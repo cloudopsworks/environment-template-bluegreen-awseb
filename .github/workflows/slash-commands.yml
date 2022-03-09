@@ -30,8 +30,10 @@ jobs:
             approve
             lgtm
             cancel
+            reject
+            close
+            rollback
             retry
-            continue
           static-args: |
             author=${{ github.actor }}
             pull_request=true
