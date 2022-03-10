@@ -22,7 +22,7 @@ module "versions_bucket" {
   server_side_encryption_configuration = {
     rule = {
       apply_server_side_encryption_by_default = {
-        #kms_master_key_id = ""
+        kms_master_key_id = "arn:aws:kms:${var.region}:${data.aws_caller_identity.current.account_id}:alias/aws/s3"
         sse_algorithm = "aws:kms"
       }
     }
@@ -60,7 +60,7 @@ module "logs_bucket" {
   server_side_encryption_configuration = {
     rule = {
       apply_server_side_encryption_by_default = {
-        #kms_master_key_id = ""
+        kms_master_key_id = "arn:aws:kms:${var.region}:${data.aws_caller_identity.current.account_id}:alias/aws/s3"
         sse_algorithm = "aws:kms"
       }
     }
