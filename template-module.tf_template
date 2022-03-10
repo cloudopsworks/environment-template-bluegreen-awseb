@@ -15,7 +15,7 @@ module "app_dns" {
   sts_assume_role  = var.sts_assume_role
 
   release_name                = "<RELEASE-NAME>"
-  namespace                   = var.namespace
+  namespace                   = format("%s-%s", var.namespace, terraform.workspace)
   domain_name                 = "DOMAIN WHERE TO CREATE ALIAS"
   domain_name_alias_prefix    = "DOMAIN NAME ALIAS"
   domain_name_weight          = var.dns_weight

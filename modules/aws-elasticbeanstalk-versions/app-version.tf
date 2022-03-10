@@ -94,7 +94,7 @@ resource "null_resource" "release_conf_copy_node" {
     null_resource.release_pre,
     null_resource.release_download_zip
   ]
-  count = substr(var.solution_stack, 0, 4) == "node" ? 1 : 0
+  count = length(regexall(".*node.*", lower(var.solution_stack))) > 0 ? 1 : 0
 
   triggers = {
     dir_sha1 = local.config_file_sha
