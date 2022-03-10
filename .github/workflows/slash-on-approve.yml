@@ -330,7 +330,7 @@ jobs:
             const labels = pullLabels.map(label => label.name);
 
             if ( checkpoint.switch_both ) {
-              if ( checkpount.is_blue ) {
+              if ( checkpoint.is_blue ) {
                 github.issues.removeLabel({
                   issue_number: pull_request_number,
                   owner: context.repo.owner,
