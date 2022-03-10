@@ -6,9 +6,6 @@
 # This module to manage DNS association.
 #
 module "app_dns" {
-  depends_on = [
-    module.beanstalk_app
-  ]
   count            = terraform.workspace != "default" ? 1 : 0
   source           = "./modules/aws-elasticbeanstalk-dns"
   region           = var.region

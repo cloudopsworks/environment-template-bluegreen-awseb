@@ -8,7 +8,7 @@ data "aws_route53_zone" "app_domain" {
 resource "aws_route53_record" "app_record_plain" {
   count = var.domain_name_weight < 0 ? 1 : 0
 
-  zone_id = data.aws_route53_zone.app_domain.id
+  zone_id = data.aws_route53_zone.app_domain.zone_id
   name    = "${var.domain_name_alias_prefix}.${var.domain_name}"
   type    = "CNAME"
   ttl     = var.default_domain_ttl
@@ -20,10 +20,10 @@ resource "aws_route53_record" "app_record_plain" {
 resource "aws_route53_record" "app_record_weighted" {
   count = var.domain_name_weight >= 0 ? 1 : 0
 
-  zone_id = data.aws_route53_zone.app_domain.id
-  name    = "${var.domain_name_alias_prefix}.${var.domain_name}"
-  type    = "CNAME"
-  ttl     = var.default_domain_ttl
+  zone_id         = data.aws_route53_zone.app_domain.zone_id
+  name            = "${var.domain_name_alias_prefix}.${var.domain_name}"
+  type            = "CNAME"
+  ttl             = var.default_domain_ttl
 
   weighted_routing_policy {
     weight = var.domain_name_weight
