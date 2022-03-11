@@ -1,5 +1,5 @@
 ##
 # (c) 2021 - CloudopsWorks OÜ - https://docs.cloudops.works/
 #
-default_version = "2.0.1"
+default_version = "VERSION_NUMBER"
 dns_weight      = 0

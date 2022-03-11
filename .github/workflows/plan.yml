@@ -4,7 +4,10 @@
 name: Environment Plan on Pull request
 on:
   pull_request:
-    
+    paths-ignore:
+      - ".github/workflows/**"
+      - "modules/**"
+  
   # pull_request_target:
   #   types:
   #     - opened

@@ -237,7 +237,7 @@ jobs:
           HELM_EXPERIMENTAL_OCI: "1"
           GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
 
-      - name: Terraform Apply - This happens only if condition
+      - name: Terraform Apply
         id: apply
         run: terraform apply -no-color ./.plans/plan.out
         continue-on-error: true
@@ -258,7 +258,8 @@ jobs:
           github-token: ${{ secrets.BOT_TOKEN }}
           script: |
             const pull_request_number = '${{ github.event.client_payload.slash_command.args.named.pull_request_number }}';
-            const output = `#### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
+            const output = `## Changes reconciled on New Environment
+            #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
             #### Terraform Apply 📖\`${{ steps.apply.outcome }}\`
             <details><summary>Show plan/apply report</summary>
             
@@ -302,13 +303,91 @@ jobs:
         if: steps.beacon.outputs.check == 'switched' && steps.apply.outcome == 'success'
         run: make completed-beacon
 
+      ### Processing of last step in blue/green deployment
+      - name: Terraform Select Green Workspace - Apply on Old Env
+        if: fromJSON(steps.checkpoint.outputs.result).to_blue == 1 && steps.beacon.outputs.check == 'switched'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.TF_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}
+          GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
+        run: terraform workspace select green
+
+      - name: Terraform Select Blue Workspace - Apply on Old Env
+        if: fromJSON(steps.checkpoint.outputs.result).to_green == 1 && steps.beacon.outputs.check == 'switched'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.TF_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}
+          GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
+        run: terraform workspace select blue
+ 
+      - name: Terraform Plan - Apply on Old Env
+        id: plan-on-old
+        if: steps.beacon.outputs.check == 'switched'
+        run: terraform plan -no-color -var-file=$(cat .destroy).tfvars -target 'module.app_dns[0]' -out ./.plans/plan.out
+        continue-on-error: false
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.TF_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}
+          HELM_CREDS_USER: ${{ secrets.AZURE_SERVICE_ID }}
+          HELM_CREDS_PASSWORD: ${{ secrets.AZURE_SERVICE_SECRET }}
+          HELM_EXPERIMENTAL_OCI: "1"
+          GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
+
+      - name: Terraform Apply - Apply on Old Env
+        id: apply-on-old
+        if: steps.beacon.outputs.check == 'switched'
+        run: terraform apply -no-color ./.plans/plan.out
+        continue-on-error: true
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.TF_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}
+          HELM_CREDS_USER: ${{ secrets.AZURE_SERVICE_ID }}
+          HELM_CREDS_PASSWORD: ${{ secrets.AZURE_SERVICE_SECRET }}
+          HELM_EXPERIMENTAL_OCI: "1"
+          GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
+
+      - name: Report terraform apply output
+        uses: actions/github-script@v4
+        if: steps.beacon.outputs.check == 'switched'
+        env:
+          PLAN: "terraform plan\n${{ steps.plan.outputs.stdout }}"
+          APPLY: "terraform apply\n${{ steps.apply.outputs.stdout }}"
+        with:
+          github-token: ${{ secrets.BOT_TOKEN }}
+          script: |
+            const pull_request_number = '${{ github.event.client_payload.slash_command.args.named.pull_request_number }}';
+            const output = `## Changes Reconciled on Old Environment:
+            #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
+            #### Terraform Apply 📖\`${{ steps.apply.outcome }}\`
+            <details><summary>Show plan/apply report for Old Environment</summary>
+            
+            \`\`\`\n
+            ${process.env.PLAN}
+            ---\n
+            ${process.env.APPLY}
+            \`\`\`
+            
+            </details>
+
+            Submit: */approve | /approved | /lgtm* in order to continue with next step of Blue/Green Deployment.
+            
+            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Working Directory: \`${{ env.tf_actions_working_dir }}\`, Workflow: \`${{ github.workflow }}\`*`;
+              
+            github.issues.createComment({
+              issue_number: pull_request_number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
+      ### Processing of last step in blue/green deployment
+
       - name: Push change to branch
         if: steps.apply.outcome == 'success'
         run: |
           git add .
           git config --global user.name "${{ secrets.BOT_USER }}"
           git config --global user.email "${{ secrets.BOT_EMAIL }}"
-          git commit -a -m "chore: Pushing changes for this step."
+          git commit -a -m "chore: Pushing changes for this step: ${{ steps.beacon.outputs.check }}."
           git push origin
 
       - name: Label entry at proper step

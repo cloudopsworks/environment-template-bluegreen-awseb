@@ -5,7 +5,10 @@ locals {
   load_balancer_log_bucket    = "${var.default_bucket_prefix}-lb-logs"
   application_versions_bucket = "${var.default_bucket_prefix}-app-versions"
 }
+
 module "versions_bucket" {
+  count = terraform.workspace == "default" ? 1 : 0
+
   source = "terraform-aws-modules/s3-bucket/aws"
 
   bucket                  = local.application_versions_bucket
@@ -23,7 +26,7 @@ module "versions_bucket" {
     rule = {
       apply_server_side_encryption_by_default = {
         kms_master_key_id = "arn:aws:kms:${var.region}:${data.aws_caller_identity.current.account_id}:alias/aws/s3"
-        sse_algorithm = "aws:kms"
+        sse_algorithm     = "aws:kms"
       }
     }
   }
@@ -45,6 +48,7 @@ module "versions_bucket" {
 }
 
 module "logs_bucket" {
+  count  = terraform.workspace == "default" ? 1 : 0
   source = "terraform-aws-modules/s3-bucket/aws"
 
   bucket                         = local.load_balancer_log_bucket
@@ -61,7 +65,7 @@ module "logs_bucket" {
     rule = {
       apply_server_side_encryption_by_default = {
         kms_master_key_id = "arn:aws:kms:${var.region}:${data.aws_caller_identity.current.account_id}:alias/aws/s3"
-        sse_algorithm = "aws:kms"
+        sse_algorithm     = "aws:kms"
       }
     }
   }

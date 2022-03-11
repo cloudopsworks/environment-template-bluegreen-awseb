@@ -10,6 +10,9 @@ on:
       - labeled
       - unlabeled
       - edited
+    paths-ignore:
+      - ".github/workflows/**"
+      - "modules/**"
 
 permissions:
   contents: write

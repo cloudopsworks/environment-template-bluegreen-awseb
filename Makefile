@@ -98,11 +98,11 @@ switched-beacon:
 
 close-old-traffic: switched-beacon 
 ifeq ($(OS),Darwin)
-	@if [ ! -f .destroy ] ; then \
+	@if [ -f .destroy ] ; then \
 		sed -i "" -e "s/dns_weight[ \t]*=.*/dns_weight      = 0/g" $(shell cat .destroy).tfvars ; \
 	fi
 else ifeq ($(OS),Linux)
-	@if [ ! -f .destroy ] ; then \
+	@if [ -f .destroy ] ; then \
 		sed -i -e "s/dns_weight[ \t]*=.*/dns_weight      = 0/g" $(shell cat .destroy).tfvars ; \
 	fi
 else

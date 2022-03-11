@@ -16,6 +16,7 @@ resource "local_file" "awscli_results_file" {
   filename             = "${path.module}/temp/${random_string.awscli_output_temp_file_name.result}.json"
   directory_permission = "0777"
   file_permission      = "0666"
+  content              = ""
 }
 
 locals {
