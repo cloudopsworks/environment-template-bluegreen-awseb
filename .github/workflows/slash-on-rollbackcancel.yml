@@ -9,6 +9,7 @@ on:
       - rollback-command
       - reject-command
       - close-command
+
 permissions:
   issues: write
   contents: write

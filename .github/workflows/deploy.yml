@@ -8,7 +8,8 @@ on:
     paths-ignore:
       - ".github/workflows/**"
       - "modules/**"
-
+      - ".beacon"
+      - ".destroy"
 
 jobs:
   deploy:

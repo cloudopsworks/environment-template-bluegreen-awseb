@@ -8,6 +8,7 @@ on:
       - approved-command
       - approve-command
       - lgtm-command
+
 permissions:
   issues: write
   contents: write
@@ -66,7 +67,7 @@ jobs:
             var proceed_with_users = false;
 
             for (const aLabel of labels) {
-              if ( aLabel.name == 'blue-green/new' || aLabel.name == 'blue-green/complete' ) {
+              if ( aLabel == 'blue-green/new' || aLabel == 'blue-green/completed' ) {
                 proceed_with_users = true;
               }
             }
@@ -382,7 +383,7 @@ jobs:
       ### Processing of last step in blue/green deployment
 
       - name: Push change to branch
-        if: steps.apply.outcome == 'success'
+        if: steps.apply.outcome == 'success' && steps.apply_on_old != 'failure'
         run: |
           git add .
           git config --global user.name "${{ secrets.BOT_USER }}"
@@ -399,6 +400,7 @@ jobs:
             const checkpoint = JSON.parse('${{ steps.checkpoint.outputs.result }}');
             const pull_request_number = '${{ github.event.client_payload.slash_command.args.named.pull_request_number }}';
             const beacon_result = '${{ steps.beacon.outputs.check }}'
+            const apply_old_result = '${{ steps.apply-on-old.outcome }}'
 
             const {data: pullLabels} = await github.issues.listLabelsOnIssue({
               issue_number: pull_request_number,
@@ -432,18 +434,12 @@ jobs:
                 labels: [ 'blue-green/both' ]
               });
             }
-            if ( beacon_result == 'completed' ) {
-              github.issues.addLabels({
+            if ( beacon_result == 'switched' && apply_old_result == 'success' ) {
+              github.issues.removeLabel({
                 issue_number: pull_request_number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                labels: [ 'blue-green/completed' ]
-              });              
-                github.issues.removeLabel({
-                  issue_number: pull_request_number,
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  name: 'do-not-merge'
-                });
+                name: 'do-not-merge'
+              });
             }
 

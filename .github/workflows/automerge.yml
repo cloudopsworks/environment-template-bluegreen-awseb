@@ -13,6 +13,8 @@ on:
     paths-ignore:
       - ".github/workflows/**"
       - "modules/**"
+      - ".beacon"
+      - ".destroy"
 
 permissions:
   contents: write

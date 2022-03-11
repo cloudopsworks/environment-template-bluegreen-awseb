@@ -7,6 +7,8 @@ on:
     paths-ignore:
       - ".github/workflows/**"
       - "modules/**"
+      - ".beacon"
+      - ".destroy"
   
   # pull_request_target:
   #   types:
@@ -206,7 +208,7 @@ jobs:
             const reviewers_count=${{ steps.reviewers.outputs.count }};
             const label='${{ steps.bluegreen.outputs.label }}';
             const nextlabel='${{ steps.bluegreen.outputs.nextlabel }}';
-            const labels = ['approval-required','review-required','do-not-merge'];
+            const labels = ['approval-required','review-required'];
             const actor = '${{ github.event.pull_request.user.login }}'
 
             if ( nextlabel != '' )
@@ -232,3 +234,30 @@ jobs:
               repo: context.repo.repo,
               labels: labels
             });
+
+      - name: Check Beacon File
+        id: checkbeacon
+        run: |
+          result=pending
+          if [ -f .beacon ] ; then
+            result=$(cat .beacon)
+          fi
+
+          echo "::set-output name=status::$result"
+
+      - name: Set DO-NOT-MERGE if not in last step
+        uses: actions/github-script@v4
+        if: ${{ steps.check_automatic.outputs.autoapprove != 'true' }}
+        with:
+          github-token: ${{secrets.BOT_TOKEN}}
+          script: |
+            check = '${{ steps.checkbeacon.outputs.status }}'
+
+            if ( check != 'completed' ) {
+              github.issues.addLabels({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                labels: [ 'do-not-merge' ]
+              });
+            }
