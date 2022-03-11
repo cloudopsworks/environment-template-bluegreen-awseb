@@ -235,25 +235,29 @@ jobs:
               labels: labels
             });
 
-      - name: Check Beacon File
-        id: checkbeacon
-        run: |
-          result=pending
-          if [ -f .beacon ] ; then
-            result=$(cat .beacon)
-          fi
-
-          echo "::set-output name=status::$result"
-
       - name: Set DO-NOT-MERGE if not in last step
         uses: actions/github-script@v4
         if: ${{ steps.check_automatic.outputs.autoapprove != 'true' }}
         with:
           github-token: ${{secrets.BOT_TOKEN}}
           script: |
-            check = '${{ steps.checkbeacon.outputs.status }}'
+            const {data: pullLabels} = await github.issues.listLabelsOnIssue({
+              issue_number: pull_request_number,
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            });
 
-            if ( check != 'completed' ) {
+            const labels = pullLabels.map(label => label.name);
+
+            var is_mergeable = false;
+
+            for (const aLabel of labels) {
+              if ( aLabel == 'blue-green/new' || aLabel == 'blue-green/completed' ) {
+                is_mergeable = true
+              }
+            }
+
+            if ( ! is_mergeable ) {
               github.issues.addLabels({
                 issue_number: context.issue.number,
                 owner: context.repo.owner,

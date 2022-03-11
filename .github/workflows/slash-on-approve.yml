@@ -382,15 +382,6 @@ jobs:
             })
       ### Processing of last step in blue/green deployment
 
-      - name: Push change to branch
-        if: steps.apply.outcome == 'success' && steps.apply_on_old != 'failure'
-        run: |
-          git add .
-          git config --global user.name "${{ secrets.BOT_USER }}"
-          git config --global user.email "${{ secrets.BOT_EMAIL }}"
-          git commit -a -m "chore: Pushing changes for this step: ${{ steps.beacon.outputs.check }}."
-          git push origin
-
       - name: Label entry at proper step
         if: steps.apply.outcome == 'success'
         uses: actions/github-script@v4
@@ -435,6 +426,12 @@ jobs:
               });
             }
             if ( beacon_result == 'switched' && apply_old_result == 'success' ) {
+              github.issues.addLabels({
+                issue_number: pull_request_number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                labels: [ 'blue-green/complete' ]
+              });
               github.issues.removeLabel({
                 issue_number: pull_request_number,
                 owner: context.repo.owner,
@@ -442,4 +439,13 @@ jobs:
                 name: 'do-not-merge'
               });
             }
+
+      - name: Push change to branch
+        if: steps.apply.outcome == 'success' && steps.apply_on_old != 'failure'
+        run: |
+          git add .
+          git config --global user.name "${{ secrets.BOT_USER }}"
+          git config --global user.email "${{ secrets.BOT_EMAIL }}"
+          git commit -a -m "chore: Pushing changes for this step: ${{ steps.beacon.outputs.check }}."
+          git push origin
 
