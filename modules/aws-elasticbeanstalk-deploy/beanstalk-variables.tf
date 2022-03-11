@@ -51,7 +51,7 @@ variable "load_balancer_public" {
 
 variable "load_balancer_ssl_policy" {
   type    = string
-  default = "ELBSecurityPolicy-TLS-1-2-Ext-2018-06"
+  default = "ELBSecurityPolicy-2016-08"
 }
 
 variable "beanstalk_application" {
