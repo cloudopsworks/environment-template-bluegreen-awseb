@@ -44,7 +44,7 @@ jobs:
       - name: Check which tier we are
         id: current-tier
         run: |
-          tier=
+          tier="blue-green/new"
           
           if [ -f .tier_enabled ] ; then
             tier=$(cat .tier_enabled)

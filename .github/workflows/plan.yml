@@ -110,7 +110,6 @@ jobs:
         id: bluegreen
         run: |
           label=$(cat .tier_enabled)
-          old=$(cat .destroy)
           apply_plan=0
           nextlabel="blue-green/$label"
 
