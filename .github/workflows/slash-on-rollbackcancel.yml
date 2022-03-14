@@ -92,7 +92,8 @@ jobs:
           github-token: ${{ secrets.BOT_TOKEN }}
           script: |
             const pull_request_number = '${{ github.event.client_payload.slash_command.args.named.pull_request_number }}';
-            const output = `#### Terraform Plan ${{ steps.tier_to_run.outputs.tier }}📖\`${{ steps.plan.outcome }}\`
+            const output = `##Rolback result on Master
+            #### Terraform Plan ${{ steps.tier_to_run.outputs.tier }}📖\`${{ steps.plan.outcome }}\`
             #### Terraform Apply ${{ steps.tier_to_run.outputs.tier }}📖\`${{ steps.apply.outcome }}\`
             <details><summary>Show plan/apply report</summary>
             
@@ -211,7 +212,8 @@ jobs:
           github-token: ${{ secrets.BOT_TOKEN }}
           script: |
             const pull_request_number = '${{ github.event.client_payload.slash_command.args.named.pull_request_number }}';
-            const output = `#### Terraform Plan ${{ steps.tier_to_run.outputs.tier }}📖\`${{ steps.plan.outcome }}\`
+            const output = `##Rolback result on Branch
+            #### Terraform Plan ${{ steps.tier_to_run.outputs.tier }}📖\`${{ steps.plan.outcome }}\`
             #### Terraform Apply ${{ steps.tier_to_run.outputs.tier }}📖\`${{ steps.apply.outcome }}\`
             <details><summary>Show plan/apply report</summary>
             
