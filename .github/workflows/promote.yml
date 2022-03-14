@@ -61,9 +61,10 @@ jobs:
       - name: Terraform tidy up
         run: terraform fmt
 
-      - name: Push change to branch
+      - name: Commit change to branch
         uses: EndBug/add-and-commit@v9
         with:
+          push: false
           add: "."
           author_name: ${{ secrets.BOT_USER }}
           author_email: ${{ secrets.BOT_EMAIL }}

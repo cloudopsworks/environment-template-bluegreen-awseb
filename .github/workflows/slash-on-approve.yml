@@ -430,7 +430,7 @@ jobs:
                 issue_number: pull_request_number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                labels: [ 'blue-green/complete' ]
+                labels: [ 'blue-green/completed' ]
               });
               github.issues.removeLabel({
                 issue_number: pull_request_number,
