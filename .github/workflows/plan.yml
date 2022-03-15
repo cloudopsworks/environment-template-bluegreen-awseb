@@ -26,6 +26,10 @@ permissions:
 jobs:
   plan:
     runs-on: ubuntu-latest
+    outputs:
+      auto_approve: ${{ steps.check_automatic.outputs.autoapprove }}
+      bluegreen_label: ${{ steps.bluegreen.outputs.label }}
+      bluegreen_nextlabel: ${{ steps.bluegreen.outputs.nextlabel }}
     steps:
       - uses: actions/labeler@v3
         with:
@@ -176,8 +180,13 @@ jobs:
               body: output
             })
 
+  label_autoapprove:
+    needs:
+      - plan
+    runs-on: ubuntu-latest
+    if: ${{ needs.plan.outputs.auto_approve == 'true' }}
+    steps:
       - uses: actions/github-script@v4
-        if: ${{ steps.check_automatic.outputs.autoapprove == 'true' }}
         with:
           github-token: ${{secrets.BOT_TOKEN}}
           script: |
@@ -187,10 +196,15 @@ jobs:
               repo: context.repo.repo,
               labels: ['approved', 'automatic-environment']
             })
-      
+
+  add_reviewers_and_approvals:
+    needs:
+      - plan
+    runs-on: ubuntu-latest
+    if: ${{ needs.plan.outputs.auto_approve != 'true' }}
+    steps:
       - name: Read reviewers from file
         id: reviewers
-        if: ${{ steps.check_automatic.outputs.autoapprove != 'true' }}
         run: |
           count=$(yq e '.requiredReviewers' OWNERS)
           reviewers_as_json=$(yq e -j -I=0 '.reviewers' OWNERS)
@@ -199,14 +213,13 @@ jobs:
 
       - name: Add review and approval labels
         uses: actions/github-script@v4
-        if: ${{ steps.check_automatic.outputs.autoapprove != 'true' }}
         with:
           github-token: ${{secrets.BOT_TOKEN}}
           script: |
             const reviewers_json=JSON.parse('${{ steps.reviewers.outputs.as_json }}');
             const reviewers_count=${{ steps.reviewers.outputs.count }};
-            const label='${{ steps.bluegreen.outputs.label }}';
-            const nextlabel='${{ steps.bluegreen.outputs.nextlabel }}';
+            const label='${{ needs.plan.outputs.bluegreen_label }}';
+            const nextlabel='${{ needs.plan.outputs.bluegreen_nextlabel }}';
             const labels = ['approval-required','review-required'];
             const actor = '${{ github.event.pull_request.user.login }}'
 
@@ -234,11 +247,20 @@ jobs:
               labels: labels
             });
 
+  do_not_merge_label:
+    needs:
+      - plan
+    runs-on: ubuntu-latest
+    if: ${{ needs.plan.outputs.auto_approve != 'true' }}
+    outputs:
+      is_mergeable: ${{ steps.check.outputs.result }}
+    steps:
       - name: Set DO-NOT-MERGE if not in last step
+        id: check
         uses: actions/github-script@v4
-        if: ${{ steps.check_automatic.outputs.autoapprove != 'true' }}
         with:
           github-token: ${{secrets.BOT_TOKEN}}
+          result-encoding: string
           script: |
             const {data: pullLabels} = await github.issues.listLabelsOnIssue({
               issue_number: context.issue.number,
@@ -252,7 +274,7 @@ jobs:
 
             for (const aLabel of labels) {
               if ( aLabel == 'blue-green/new' || aLabel == 'blue-green/completed' ) {
-                is_mergeable = true
+                is_mergeable = true;
               }
             }
 
@@ -264,3 +286,30 @@ jobs:
                 labels: [ 'do-not-merge' ]
               });
             }
+
+            return ( is_mergeable ? 'true' : 'false' );
+
+  wipe-beacon-files:
+    needs:
+      - plan
+      - do_not_merge_label
+    runs-on: ubuntu-latest
+    if: ${{ needs.do_not_merge_label.outputs.is_mergeable == 'true' }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.BOT_TOKEN }}
+
+      - name: Remove beacon files
+        run: |
+          [ -f .destroy ] && rm -f .destroy
+          [ -f .beacon ] && rm -f .beacon
+
+      - name: Commit and push
+        uses: EndBug/add-and-commit@v9
+        with:
+          push: true
+          add: "."
+          author_name: ${{ secrets.BOT_USER }}
+          author_email: ${{ secrets.BOT_EMAIL }}
+          message: "chore: remove of beacon files, ready to merge."
