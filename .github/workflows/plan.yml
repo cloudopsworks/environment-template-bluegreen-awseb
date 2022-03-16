@@ -205,6 +205,10 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ needs.plan.outputs.auto_approve != 'true' }}
     steps:
+      - uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.BOT_TOKEN }}
+
       - name: Read reviewers from file
         id: reviewers
         run: |
