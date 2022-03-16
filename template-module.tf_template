@@ -100,7 +100,7 @@ module "beanstalk_app" {
   #   {
   #     name      = "default"
   #     from_port = 80
-  #     to_port   = 8080
+  #     to_port   = 8081
   #     protocol  = "HTTP"
   #   },
   #   {
