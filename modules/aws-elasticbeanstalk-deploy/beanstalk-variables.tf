@@ -69,13 +69,26 @@ variable "beanstalk_ec2_key" {
 }
 
 variable "beanstalk_ami_id" {
-  type = string
+  type        = string
+  default     = ""
+  description = "(optional) Fix AMI which elasticbeanstalk is based on"
 }
 
 variable "beanstalk_instance_port" {
   type        = number
   default     = 80
   description = "(optional) Elastic Beanstalk default port for NGINX instance to run"
+}
+
+variable "beanstalk_instance_profile" {
+  type        = string
+  default     = "aws-elasticbeanstalk-ec2-role"
+  description = "(optional) AWS instance profile role for the instance, this one must exist previous creation of instance."
+}
+variable "beanstalk_service_role" {
+  type        = string
+  default     = "aws-elasticbeanstalk-service-role"
+  description = "(optional) AWS instance service role for the instance, only name instead of ARN (it is calculated), this one must exist previous creation of instance."
 }
 
 variable "port_mappings" {
