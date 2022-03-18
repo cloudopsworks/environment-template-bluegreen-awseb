@@ -65,8 +65,12 @@ jobs:
 
       - name: Make sure beacon & destroy objects do not get into branch
         run: |
-          [ -f .beacon ] && rm -f .beacon
-          [ -f .destroy ] && rm -f .destroy
+          if [ -f .beacon ] ; then
+            rm -f .beacon
+          fi
+          if [ -f .destroy ] ; then
+            rm -f .destroy
+          fi
 
       - name: Commit change to branch
         uses: EndBug/add-and-commit@v9
