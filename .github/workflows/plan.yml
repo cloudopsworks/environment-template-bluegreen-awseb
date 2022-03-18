@@ -297,27 +297,28 @@ jobs:
 
             return ( is_mergeable ? 'true' : 'false' );
 
-  wipe-beacon-files:
-    needs:
-      - plan
-      - do_not_merge_label
-    runs-on: ubuntu-latest
-    if: ${{ needs.do_not_merge_label.outputs.is_mergeable == 'true' }}
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          token: ${{ secrets.BOT_TOKEN }}
+  # Below does not work on pull request.
+  # wipe-beacon-files:
+  #   needs:
+  #     - plan
+  #     - do_not_merge_label
+  #   runs-on: ubuntu-latest
+  #   if: ${{ needs.do_not_merge_label.outputs.is_mergeable == 'true' }}
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #       with:
+  #         token: ${{ secrets.BOT_TOKEN }}
 
-      - name: Remove beacon files
-        run: |
-          [ -f .destroy ] && rm -f .destroy
-          [ -f .beacon ] && rm -f .beacon
+  #     - name: Remove beacon files
+  #       run: |
+  #         [ -f .destroy ] && rm -f .destroy
+  #         [ -f .beacon ] && rm -f .beacon
 
-      - name: Commit and push
-        uses: EndBug/add-and-commit@v9
-        with:
-          push: true
-          add: "."
-          author_name: ${{ secrets.BOT_USER }}
-          author_email: ${{ secrets.BOT_EMAIL }}
-          message: "chore: remove of beacon files, ready to merge."
+  #     - name: Commit and push
+  #       uses: EndBug/add-and-commit@v9
+  #       with:
+  #         push: true
+  #         add: "."
+  #         author_name: ${{ secrets.BOT_USER }}
+  #         author_email: ${{ secrets.BOT_EMAIL }}
+  #         message: "chore: remove of beacon files, ready to merge."
