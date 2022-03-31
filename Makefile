@@ -55,7 +55,7 @@ ifeq ($(OS),Darwin)
 	sed -i "" -e "s/source_name[ \t]*=.*/source_name = \"$(CHART)\"/" $(TARGET)-module.tf
 	sed -i "" -e "s/release_name[ \t]*=.*/release_name = \"$(TARGET)\"/" $(TARGET)-module.tf
 	sed -i "" -e "s/load_balancer_log_prefix[ \t]*=.*/load_balancer_log_prefix = format(\"%s-%s\", \"$(TARGET)\", terraform.workspace)/" $(TARGET)-module.tf
-	sed -i "" -e "s/load_balancer_alias[ \t]*=.*/load_balancer_alias = \"\$\{format(\"%s-%s\", \"$(TARGET)\", terraform.workspace)\}\-ingress\"/" $(TARGET)-module.tf
+	sed -i "" -e "s/load_balancer_alias[ \t]*=.*/load_balancer_alias = \"$$\{format(\"%s-%s\", \"$(TARGET)\", terraform.workspace)\}\-ingress\"/" $(TARGET)-module.tf
 	sed -i "" -e "s/default_version[ \t]*=.*/default_version = \"$(RELEASE_VERSION)\"/g" $(shell cat .tier_enabled).tfvars
 	@if [ "$(PLATFORM)" != "" ] ; then \
 		sed -i "" -e "s/SOLUTION_STACK/$(PLATFORM)/g" $(TARGET)-module.tf ; \
@@ -65,7 +65,7 @@ else ifeq ($(OS),Linux)
 	sed -i -e "s/source_name[ \t]*=.*/source_name = \"$(CHART)\"/" $(TARGET)-module.tf
 	sed -i -e "s/release_name[ \t]*=.*/release_name = \"$(TARGET)\"/" $(TARGET)-module.tf
 	sed -i -e "s/load_balancer_log_prefix[ \t]*=.*/load_balancer_log_prefix = format(\"%s-%s\", \"$(TARGET)\", terraform.workspace)/" $(TARGET)-module.tf
-	sed -i -e "s/load_balancer_alias[ \t]*=.*/load_balancer_alias = \"\$\{format(\"%s-%s\", \"$(TARGET)\", terraform.workspace)\}\-ingress\"/" $(TARGET)-module.tf
+	sed -i -e "s/load_balancer_alias[ \t]*=.*/load_balancer_alias = \"$$\{format(\"%s-%s\", \"$(TARGET)\", terraform.workspace)\}\-ingress\"/" $(TARGET)-module.tf
 	sed -i -e "s/default_version[ \t]*=.*/default_version = \"$(RELEASE_VERSION)\"/g" $(shell cat .tier_enabled).tfvars
 	@if [ "$(PLATFORM)" != "" ] ; then \
 		sed -i -e "s/SOLUTION_STACK/$(PLATFORM)/g" $(TARGET)-module.tf ; \
