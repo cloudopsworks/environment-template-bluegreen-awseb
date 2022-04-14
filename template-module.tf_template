@@ -10,7 +10,7 @@
 #
 module "app_dns" {
   count            = terraform.workspace != "default" ? 1 : 0
-  source           = "cloudopsworks/elasticbeanstalk-dns/aws"
+  source           = "cloudopsworks/beanstalk-dns/aws"
   version          = "1.0.0"
   region           = var.region
   sts_assume_role  = var.sts_assume_role
@@ -25,7 +25,7 @@ module "app_dns" {
 
 module "app_version" {
   count            = terraform.workspace != "default" ? 1 : 0
-  source           = "cloudopsworks/elasticbeanstalk-version/aws"
+  source           = "cloudopsworks/beanstalk-version/aws"
   version          = "1.0.1"
   region           = var.region
   sts_assume_role  = var.sts_assume_role
@@ -48,7 +48,7 @@ module "app_version" {
 
 module "beanstalk_app" {
   count            = terraform.workspace != "default" ? 1 : 0
-  source           = "cloudopsworks/elasticbeanstalk-deploy/aws"
+  source           = "cloudopsworks/beanstalk-deploy/aws"
   version          = "1.0.0"
   region           = var.region
   sts_assume_role  = var.sts_assume_role
