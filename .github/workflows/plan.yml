@@ -122,7 +122,7 @@ jobs:
         id: bluegreen
         run: |
           label=$(cat .tier_enabled)
-          action=$(cat .beacon)
+          action=$(cat .beacon | head -1)
           nextlabel="blue-green/$label"
 
           echo "::set-output name=action_plan::${action}"

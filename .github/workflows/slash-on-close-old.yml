@@ -55,7 +55,6 @@ jobs:
           git push origin
 
       - name: Label entry at proper step
-        if: steps.apply.outcome == 'success'
         uses: actions/github-script@v4
         with:
           github-token: ${{secrets.BOT_TOKEN}}
@@ -70,9 +69,18 @@ jobs:
 
             const labels = pullLabels.map(label => label.name);
 
-              github.issues.addLabels({
+            if( labels.filter(aLabel => aLabel == 'do-not-merge').length == 1 ) {
+              github.issues.removeLabel({
                 issue_number: pull_request_number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                labels: [ 'blue-green/completed' ]
+                name: 'do-not-merge'
               });
+            }
+
+            github.issues.addLabels({
+              issue_number: pull_request_number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: [ 'blue-green/completed' ]
+            });

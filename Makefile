@@ -12,6 +12,8 @@ TARGET :=
 CHART :=
 PLATFORM :=
 DESTROYFOUND := $(shell [ -f .destroy ] && echo 1 || echo 0)
+DATE :=	$(shell date +%Y%m%d-%H%M%S.%s)
+
 
 .PHONY: VERSION
 .PHONY: version
@@ -91,12 +93,15 @@ switch-from-blue: deploy-beacon
 
 deploy-beacon:
 	echo "deploy" > .beacon
+	echo "$(DATE)" >> .beacon
 
 closeoldtraffic-beacon:
 	echo "close_old" > .beacon
+	echo "$(DATE)" >> .beacon
 
 opentraffic-beacon:
 	echo "open_new" > .beacon
+	echo "$(DATE)" >> .beacon
 
 close-old-traffic: closeoldtraffic-beacon 
 ifeq ($(OS),Darwin)
