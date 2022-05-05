@@ -82,5 +82,5 @@ jobs:
               issue_number: pull_request_number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              labels: [ 'blue-green/completed' ]
+              labels: [ 'blue-green/completed', 'old-traffic/closed' ]
             });
