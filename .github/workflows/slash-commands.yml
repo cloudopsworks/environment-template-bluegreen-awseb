@@ -36,6 +36,9 @@ jobs:
             close
             rollback
             retry
+            open-new
+            close-old
+            force-switch
           static-args: |
             author=${{ github.actor }}
             pull_request=true

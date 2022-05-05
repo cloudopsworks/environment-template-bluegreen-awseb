@@ -75,30 +75,30 @@ else
 	exit -1
 endif
 
-switch-from-green:
+switch-from-green: deploy-beacon
 	echo "blue" > .tier_enabled
 	echo "green" > .destroy
 	@if [ ! -f blue.tfvars ] ; then \
 		cp template-tier.tfvars_template blue.tfvars ; \
 	fi
 
-switch-from-blue:
+switch-from-blue: deploy-beacon
 	echo "green" > .tier_enabled
 	echo "blue" > .destroy
 	@if [ ! -f green.tfvars ] ; then \
 		cp template-tier.tfvars_template green.tfvars ; \
 	fi
 
-deployed-beacon:
-	echo "deployed" > .beacon
+deploy-beacon:
+	echo "deploy" > .beacon
 
-completed-beacon:
-	echo "completed" > .beacon
+closeoldtraffic-beacon:
+	echo "close_old" > .beacon
 
-switched-beacon:
-	echo "switched" > .beacon
+opentraffic-beacon:
+	echo "open_new" > .beacon
 
-close-old-traffic: switched-beacon 
+close-old-traffic: closeoldtraffic-beacon 
 ifeq ($(OS),Darwin)
 	@if [ -f .destroy ] ; then \
 		sed -i "" -e "s/dns_weight[ \t]*=.*/dns_weight      = 0/g" $(shell cat .destroy).tfvars ; \
@@ -112,7 +112,7 @@ else
 	exit -1
 endif
 
-open-new-traffic: deployed-beacon
+open-new-traffic: opentraffic-beacon
 ifeq ($(OS),Darwin)
 	sed -i "" -e "s/dns_weight[ \t]*=.*/dns_weight      = 10/g" $(shell cat .tier_enabled).tfvars
 else ifeq ($(OS),Linux)
@@ -122,11 +122,27 @@ else
 	exit -1
 endif
 
-close-traffic:
+close-traffic: 
 ifeq ($(OS),Darwin)
 	sed -i "" -e "s/dns_weight[ \t]*=.*/dns_weight      = 0/g" $(shell cat .tier_enabled).tfvars
 else ifeq ($(OS),Linux)
 	sed -i -e "s/dns_weight[ \t]*=.*/dns_weight      = 0/g" $(shell cat .tier_enabled).tfvars
+else
+	echo "platfrom $(OS) not supported to release from"
+	exit -1
+endif
+
+force-traffic: closeoldtraffic-beacon
+ifeq ($(OS),Darwin)
+	@if [ -f .destroy ] ; then \
+		sed -i "" -e "s/dns_weight[ \t]*=.*/dns_weight      = 0/g" $(shell cat .destroy).tfvars ; \
+	fi
+	sed -i "" -e "s/dns_weight[ \t]*=.*/dns_weight      = 10/g" $(shell cat .tier_enabled).tfvars
+else ifeq ($(OS),Linux)
+	@if [ -f .destroy ] ; then \
+		sed -i -e "s/dns_weight[ \t]*=.*/dns_weight      = 0/g" $(shell cat .destroy).tfvars ; \
+	fi
+	sed -i -e "s/dns_weight[ \t]*=.*/dns_weight      = 10/g" $(shell cat .tier_enabled).tfvars
 else
 	echo "platfrom $(OS) not supported to release from"
 	exit -1
