@@ -608,7 +608,7 @@ jobs:
         with:
           github-token: ${{ secrets.BOT_TOKEN }}
           script: |
-            const output = `##Rolback result on Master
+            const output = `### Rollback result on Master
             #### Terraform Plan ${{ steps.tier_to_run.outputs.tier }}📖\`${{ steps.plan.outcome }}\`
             #### Terraform Apply ${{ steps.tier_to_run.outputs.tier }}📖\`${{ steps.apply.outcome }}\`
             <details><summary>Show plan/apply report</summary>
@@ -728,7 +728,7 @@ jobs:
         with:
           github-token: ${{ secrets.BOT_TOKEN }}
           script: |
-            const output = `##Rolback result on Branch
+            const output = `### Rollback result on Branch
             #### Terraform Plan ${{ steps.tier_to_run.outputs.tier }}📖\`${{ steps.plan.outcome }}\`
             #### Terraform Apply ${{ steps.tier_to_run.outputs.tier }}📖\`${{ steps.apply.outcome }}\`
             <details><summary>Show plan/apply report</summary>
