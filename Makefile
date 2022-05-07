@@ -103,6 +103,10 @@ opentraffic-beacon:
 	echo "open_new" > .beacon
 	echo "$(DATE)" >> .beacon
 
+rollback-beacon:
+	echo "rollback" > .beacon
+	echo "$(DATE)" >> .beacon
+
 close-old-traffic: closeoldtraffic-beacon 
 ifeq ($(OS),Darwin)
 	@if [ -f .destroy ] ; then \
@@ -165,7 +169,7 @@ else
 endif
 endif
 
-rollback: rollback-tier
+rollback: rollback-tier rollback-beacon
 ifeq ($(OS),Darwin)
 	sed -i "" -e "s/dns_weight[ \t]*=.*/dns_weight      = 0/g" $(shell cat .tier_enabled).tfvars
 else ifeq ($(OS),Linux)
