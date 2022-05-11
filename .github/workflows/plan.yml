@@ -15,11 +15,14 @@ on:
       - ".beacon"
       - ".destroy"
   
-  # pull_request_target:
-  #   types:
-  #     - opened
-  #   paths-ignore:
-  #     - ".github/workflows/**"
+  pull_request_target:
+    types:
+      - opened
+      - synchronize
+    branches-ignore:
+      - "promote-**"
+    paths:
+      - "values/**"
 
 permissions:
   contents: read
@@ -52,8 +55,15 @@ jobs:
           echo "::set-output name=repo_name::$repo_name"
 
       - uses: actions/checkout@v2
+        if: startsWith(github.head_ref, 'promote-')
         with:
           token: ${{ secrets.BOT_TOKEN }}
+
+      - uses: actions/checkout@v2
+        if: ! startsWith(github.head_ref, 'promote-')
+        with:
+          token: ${{ secrets.BOT_TOKEN }}
+          ref: refs/pull/${{ github.events.pull_request.number }}/head
 
       - name: Install yq
         run: |
@@ -491,31 +501,6 @@ jobs:
 
             return ( is_mergeable ? 'true' : 'false' );
 
-  # Below does not work on pull request.
-  # wipe-beacon-files:
-  #   needs:
-  #     - plan
-  #     - do_not_merge_label
-  #   runs-on: ubuntu-latest
-  #   if: ${{ needs.do_not_merge_label.outputs.is_mergeable == 'true' }}
-  #   steps:
-  #     - uses: actions/checkout@v2
-  #       with:
-  #         token: ${{ secrets.BOT_TOKEN }}
-
-  #     - name: Remove beacon files
-  #       run: |
-  #         [ -f .destroy ] && rm -f .destroy
-  #         [ -f .beacon ] && rm -f .beacon
-
-  #     - name: Commit and push
-  #       uses: EndBug/add-and-commit@v9
-  #       with:
-  #         push: true
-  #         add: "."
-  #         author_name: ${{ secrets.BOT_USER }}
-  #         author_email: ${{ secrets.BOT_EMAIL }}
-  #         message: "chore: remove of beacon files, ready to merge."
   rollback-on-master:
     needs:
       - plan
