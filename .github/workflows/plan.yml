@@ -55,7 +55,6 @@ jobs:
           echo "::set-output name=repo_name::$repo_name"
 
       - uses: actions/checkout@v2
-        if: startsWith(github.head_ref, 'promote-')
         with:
           token: ${{ secrets.BOT_TOKEN }}
 
