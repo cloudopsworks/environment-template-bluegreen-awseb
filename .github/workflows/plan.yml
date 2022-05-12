@@ -14,15 +14,6 @@ on:
       - "modules/**"
       - ".beacon"
       - ".destroy"
-  
-  pull_request_target:
-    types:
-      - opened
-      - synchronize
-    branches-ignore:
-      - "promote-**"
-    paths:
-      - "values/**"
 
 permissions:
   contents: read
