@@ -9,10 +9,10 @@ on:
     types:
       - opened
       - synchronize
-    branches-ignore:
-      - 'promote-*'
     paths:
       - 'values/**'
+      - '!**.tf'
+      - '!**.tfvars'
 
 permissions:
   contents: read
