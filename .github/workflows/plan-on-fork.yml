@@ -10,7 +10,7 @@ on:
       - opened
       - synchronize
     branches-ignore:
-      - "promote-**"
+      - "promote-*"
     paths:
       - "values/**"
 
