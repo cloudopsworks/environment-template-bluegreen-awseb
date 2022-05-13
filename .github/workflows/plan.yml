@@ -10,10 +10,10 @@ on:
       - opened
       - synchronize
     paths-ignore:
-      - ".github/workflows/**"
-      - "modules/**"
-      - ".beacon"
-      - ".destroy"
+      - '.github/workflows/**'
+      - 'modules/**'
+      - '.beacon'
+      - '.destroy'
 
 permissions:
   contents: read
