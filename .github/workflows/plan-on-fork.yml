@@ -90,7 +90,7 @@ jobs:
 
             for ( theAuthor in reviewers_json ) {
               if ( theAuthor != context.payload.pull_request.user.login ) {
-                reviewers_list.put(theAuthor)
+                reviewers_list.push(theAuthor)
               }
             }
 
