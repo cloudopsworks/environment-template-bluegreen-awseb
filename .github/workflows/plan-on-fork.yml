@@ -85,12 +85,15 @@ jobs:
           script: |
             const reviewers_json=JSON.parse('${{ steps.reviewers.outputs.as_json }}')
             const reviewers_count=${{ steps.reviewers.outputs.count }}
+            const actor = '${{ github.event.pull_request.user.login }}'
 
-            var reviewers_list = []
+            if ( nextlabel != '' )
+              labels.push(nextlabel)
 
-            for ( theAuthor in reviewers_json ) {
-              if ( theAuthor != context.payload.pull_request.user.login ) {
-                reviewers_list.push(theAuthor)
+            var reviewers = []
+            for ( const rev of reviewers_json ) {
+              if ( actor != rev ) {
+                reviewers.push(rev)
               }
             }
 
@@ -98,7 +101,7 @@ jobs:
               pull_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              reviewers: reviewers_list
+              reviewers: reviewers
             })
 
             github.issues.addLabels({
