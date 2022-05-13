@@ -83,14 +83,14 @@ jobs:
         with:
           github-token: ${{secrets.BOT_TOKEN}}
           script: |
-            const reviewers_json=JSON.parse('${{ steps.reviewers.outputs.as_json }}')
-            const reviewers_count=${{ steps.reviewers.outputs.count }}
-            const actor = '${{ github.event.pull_request.user.login }}'
+            const reviewers_json=JSON.parse('${{ steps.reviewers.outputs.as_json }}');
+            const reviewers_count=${{ steps.reviewers.outputs.count }};
+            const actor = '${{ github.event.pull_request.user.login }}';
 
-            var reviewers = []
+            var reviewers = [];
             for ( const rev of reviewers_json ) {
               if ( actor != rev ) {
-                reviewers.push(rev)
+                reviewers.push(rev);
               }
             }
 
@@ -99,11 +99,21 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               reviewers: reviewers
-            })
+            });
 
             github.issues.addLabels({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
               labels: ['approval-required','review-required']
-            })
+            });
+
+            if( github.head_ref.startWith('promote-') ) {
+              github.issues.addLabels({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                labels: ['merge-allowed']
+              });
+            }
+            

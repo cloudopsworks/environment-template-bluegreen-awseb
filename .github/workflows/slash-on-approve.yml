@@ -69,7 +69,7 @@ jobs:
             var proceed_with_users = false;
 
             for (const aLabel of labels) {
-              if ( aLabel == 'blue-green/new' || aLabel == 'blue-green/completed' ) {
+              if ( aLabel == 'blue-green/new' || aLabel == 'blue-green/completed' || aLabel == 'merge-allowed') {
                 proceed_with_users = true;
               }
             }
