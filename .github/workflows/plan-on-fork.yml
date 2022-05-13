@@ -86,6 +86,7 @@ jobs:
             const reviewers_json=JSON.parse('${{ steps.reviewers.outputs.as_json }}');
             const reviewers_count=${{ steps.reviewers.outputs.count }};
             const actor = '${{ github.event.pull_request.user.login }}';
+            const ref = '${{ github.event.pull_request.head.ref }}'
 
             var reviewers = [];
             for ( const rev of reviewers_json ) {
@@ -108,7 +109,7 @@ jobs:
               labels: ['approval-required','review-required']
             });
 
-            if( github.head_ref.startWith('promote-') ) {
+            if( !ref.startsWith('promote-') ) {
               github.issues.addLabels({
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
