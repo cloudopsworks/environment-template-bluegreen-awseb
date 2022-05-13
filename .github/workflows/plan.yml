@@ -49,12 +49,6 @@ jobs:
         with:
           token: ${{ secrets.BOT_TOKEN }}
 
-      - uses: actions/checkout@v2
-        if: ! startsWith(github.head_ref, 'promote-')
-        with:
-          token: ${{ secrets.BOT_TOKEN }}
-          ref: refs/pull/${{ github.events.pull_request.number }}/head
-
       - name: Install yq
         run: |
           sudo wget -O /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.6.3/yq_linux_amd64

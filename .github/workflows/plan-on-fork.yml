@@ -86,11 +86,19 @@ jobs:
             const reviewers_json=JSON.parse('${{ steps.reviewers.outputs.as_json }}')
             const reviewers_count=${{ steps.reviewers.outputs.count }}
 
+            var reviewers_list = []
+
+            for ( theAuthor in reviewers_json ) {
+              if ( theAuthor != context.payload.pull_request.user.login ) {
+                reviewers_list.put(theAuthor)
+              }
+            }
+
             github.pulls.requestReviewers({
               pull_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              reviewers: reviewers_json
+              reviewers: reviewers_list
             })
 
             github.issues.addLabels({
