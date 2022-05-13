@@ -87,9 +87,6 @@ jobs:
             const reviewers_count=${{ steps.reviewers.outputs.count }}
             const actor = '${{ github.event.pull_request.user.login }}'
 
-            if ( nextlabel != '' )
-              labels.push(nextlabel)
-
             var reviewers = []
             for ( const rev of reviewers_json ) {
               if ( actor != rev ) {
