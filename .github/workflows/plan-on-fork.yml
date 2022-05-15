@@ -23,6 +23,7 @@ permissions:
   checks: write
 
 jobs:
+  # Perform a check whenever a FORK creates a PR into main Repository
   pr-checks:
     runs-on: ubuntu-latest
     steps:
