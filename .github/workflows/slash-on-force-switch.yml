@@ -17,7 +17,7 @@ permissions:
   pull-requests: write
 
 jobs:
-  open-new-traffic:
+  force-trafic-switch:
     runs-on: ubuntu-latest
     steps:
       # Get pull request head
