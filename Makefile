@@ -83,6 +83,14 @@ switch-from-green: deploy-beacon
 	@if [ ! -f blue.tfvars ] ; then \
 		cp template-tier.tfvars_template blue.tfvars ; \
 	fi
+ifeq ($(OS),Darwin)
+	sed -i "" -e "s/dns_weight[ \t]*=.*/dns_weight      = 0/g" blue.tfvars ; \
+else ifeq ($(OS),Linux)
+	sed -i -e "s/dns_weight[ \t]*=.*/dns_weight      = 0/g" blue.tfvars ; \
+else
+	echo "platfrom $(OS) not supported to release from"
+	exit -1
+endif
 
 switch-from-blue: deploy-beacon
 	echo "green" > .tier_enabled
@@ -90,6 +98,14 @@ switch-from-blue: deploy-beacon
 	@if [ ! -f green.tfvars ] ; then \
 		cp template-tier.tfvars_template green.tfvars ; \
 	fi
+ifeq ($(OS),Darwin)
+	sed -i "" -e "s/dns_weight[ \t]*=.*/dns_weight      = 0/g" green.tfvars ; \
+else ifeq ($(OS),Linux)
+	sed -i -e "s/dns_weight[ \t]*=.*/dns_weight      = 0/g" green.tfvars ; \
+else
+	echo "platfrom $(OS) not supported to release from"
+	exit -1
+endif
 
 deploy-beacon:
 	echo "deploy" > .beacon
