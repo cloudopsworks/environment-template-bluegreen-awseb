@@ -84,9 +84,9 @@ switch-from-green: deploy-beacon
 		cp template-tier.tfvars_template blue.tfvars ; \
 	fi
 ifeq ($(OS),Darwin)
-	sed -i "" -e "s/dns_weight[ \t]*=.*/dns_weight      = 0/g" blue.tfvars ; \
+	sed -i "" -e "s/dns_weight[ \t]*=.*/dns_weight      = 0/g" blue.tfvars
 else ifeq ($(OS),Linux)
-	sed -i -e "s/dns_weight[ \t]*=.*/dns_weight      = 0/g" blue.tfvars ; \
+	sed -i -e "s/dns_weight[ \t]*=.*/dns_weight      = 0/g" blue.tfvars
 else
 	echo "platfrom $(OS) not supported to release from"
 	exit -1
@@ -99,9 +99,9 @@ switch-from-blue: deploy-beacon
 		cp template-tier.tfvars_template green.tfvars ; \
 	fi
 ifeq ($(OS),Darwin)
-	sed -i "" -e "s/dns_weight[ \t]*=.*/dns_weight      = 0/g" green.tfvars ; \
+	sed -i "" -e "s/dns_weight[ \t]*=.*/dns_weight      = 0/g" green.tfvars
 else ifeq ($(OS),Linux)
-	sed -i -e "s/dns_weight[ \t]*=.*/dns_weight      = 0/g" green.tfvars ; \
+	sed -i -e "s/dns_weight[ \t]*=.*/dns_weight      = 0/g" green.tfvars
 else
 	echo "platfrom $(OS) not supported to release from"
 	exit -1
