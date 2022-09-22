@@ -176,6 +176,8 @@ jobs:
 
       # Install Terraform
       - uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: 1.1.7
 
       # Run Terraform Init, as we start on clean workspace
       - name: Terraform Init
@@ -311,6 +313,8 @@ jobs:
 
       # Install Terraform
       - uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: 1.1.7
 
       # Working on Master will be .tier_enabled
       - name: Blue Green Deployment destroy check
@@ -566,6 +570,8 @@ jobs:
     steps:
       # Install terraform
       - uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: 1.1.7
 
       # Get pull request base
       - name: Get Pull Request BASE Ref
@@ -684,6 +690,8 @@ jobs:
     steps:
       # Install terraform
       - uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: 1.1.7
 
       # Get pull request head
       - name: Get Pull Request HEAD Ref
