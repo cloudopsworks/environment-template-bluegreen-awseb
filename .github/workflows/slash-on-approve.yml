@@ -24,7 +24,7 @@ jobs:
     outputs:
       nextstep: ${{ steps.approval.outputs.result }}
     steps:
-      - uses: actions/github-script@v4
+      - uses: actions/github-script@v6
         id: approval
         with:
           github-token: ${{secrets.BOT_TOKEN}}
@@ -33,7 +33,7 @@ jobs:
             const pull_request_number = '${{ github.event.client_payload.slash_command.args.named.pull_request_number }}';
             const author = '${{ github.event.client_payload.slash_command.args.named.author }}';
             
-            const {data: thepull} = await github.pulls.get({
+            const {data: thepull} = await github.rest.pulls.get({
               owner: context.repo.owner,
               repo: context.repo.repo,
               pull_number: pull_request_number
@@ -50,7 +50,7 @@ jobs:
             
             *Action: \`${{ github.event_name }}\`, Working Directory: \`${{ env.tf_actions_working_dir }}\`, Workflow: \`${{ github.workflow }}\`*`;
 
-            const {data: reviewers} = await github.pulls.listRequestedReviewers({
+            const {data: reviewers} = await github.rest.pulls.listRequestedReviewers({
               owner: context.repo.owner,
               repo: context.repo.repo,
               pull_number: pull_request_number
@@ -58,7 +58,7 @@ jobs:
 
             var is_approved = false;
 
-            const {data: pullLabels} = await github.issues.listLabelsOnIssue({
+            const {data: pullLabels} = await github.rest.issues.listLabelsOnIssue({
               issue_number: pull_request_number,
               owner: context.repo.owner,
               repo: context.repo.repo
@@ -85,7 +85,7 @@ jobs:
               const message = `Proceed with next step for Blue/Green deployment.
               Submit: */approve|/lgtm|/approved* in order to continue with next step of Blue/Green Deployment.`;
               
-              github.issues.createComment({
+              github.rest.issues.createComment({
                 issue_number: pull_request_number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
@@ -94,7 +94,7 @@ jobs:
             }
 
             if ( is_approved ) {
-              github.issues.createComment({
+              github.rest.issues.createComment({
                 issue_number: pull_request_number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
@@ -106,26 +106,26 @@ jobs:
                 reviewer_names.push(aUser.login);
               }
 
-              github.pulls.removeRequestedReviewers({
+              github.rest.pulls.removeRequestedReviewers({
                 pull_number: pull_request_number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 reviewers: reviewer_names
               });
 
-              github.issues.removeLabel({
+              github.rest.issues.removeLabel({
                 issue_number: pull_request_number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 name: 'approval-required',
               });
-              github.issues.removeLabel({
+              github.rest.issues.removeLabel({
                 issue_number: pull_request_number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 name: 'review-required'
               });
-              github.issues.addLabels({
+              github.rest.issues.addLabels({
                 issue_number: pull_request_number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,

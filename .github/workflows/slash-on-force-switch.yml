@@ -22,14 +22,14 @@ jobs:
     steps:
       # Get pull request head
       - name: Get Pull Request HEAD Ref
-        uses: actions/github-script@v4
+        uses: actions/github-script@v6
         id: the_pull
         with:
           github-token: ${{secrets.BOT_TOKEN}}
           result-encoding: string
           script: |
             const pull_request_number = '${{ github.event.client_payload.slash_command.args.named.pull_request_number }}';
-            const {data: thePull} = await github.pulls.get({
+            const {data: thePull} = await github.rest.pulls.get({
               pull_number: pull_request_number,
               owner: context.repo.owner,
               repo: context.repo.repo
@@ -55,13 +55,13 @@ jobs:
           git push origin
 
       - name: Label entry at proper step
-        uses: actions/github-script@v4
+        uses: actions/github-script@v6
         with:
           github-token: ${{secrets.BOT_TOKEN}}
           script: |
             const pull_request_number = '${{ github.event.client_payload.slash_command.args.named.pull_request_number }}';
 
-            const {data: pullLabels} = await github.issues.listLabelsOnIssue({
+            const {data: pullLabels} = await github.rest.issues.listLabelsOnIssue({
               issue_number: pull_request_number,
               owner: context.repo.owner,
               repo: context.repo.repo
@@ -70,7 +70,7 @@ jobs:
             const labels = pullLabels.map(label => label.name);
 
             if( labels.filter(aLabel => aLabel == 'do-not-merge').length == 1 ) {
-              github.issues.removeLabel({
+              github.rest.issues.removeLabel({
                 issue_number: pull_request_number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
@@ -78,7 +78,7 @@ jobs:
               });
             }
 
-            github.issues.addLabels({
+            github.rest.issues.addLabels({
               issue_number: pull_request_number,
               owner: context.repo.owner,
               repo: context.repo.repo,

@@ -45,8 +45,8 @@ jobs:
         run: |
           repo_owner=`echo "$GITHUB_REPOSITORY" | cut -f 1 -d "/"`
           repo_name=`echo "$GITHUB_REPOSITORY" | cut -f 2 -d "/"`
-          echo "::set-output name=owner::$repo_owner"
-          echo "::set-output name=repo_name::$repo_name"
+          echo "owner=$repo_owner" >> $GITHUB_OUTPUT
+          echo "repo_name=$repo_name" >> $GITHUB_OUTPUT
 
       # Source Checkout from PR Head
       - uses: actions/checkout@v2
@@ -60,7 +60,7 @@ jobs:
           sudo chmod +x /usr/local/bin/yq
 
       # Install terraform tools
-      - uses: hashicorp/setup-terraform@v1
+      - uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.1.7
 
@@ -73,7 +73,7 @@ jobs:
           if [[ "$is_auto" != "true" ]] ; then
             is_auto=false
           fi
-          echo "::set-output name=autoapprove::$is_auto"
+          echo "autoapprove=$is_auto" >> $GITHUB_OUTPUT
 
       # Perform Terraform formatting check
       - name: Terraform fmt
@@ -135,13 +135,13 @@ jobs:
           action=$(cat .beacon | head -1)
           nextlabel="blue-green/$label"
 
-          echo "::set-output name=action_plan::${action}"
-          echo "::set-output name=nextlabel::${nextlabel}"
-          echo "::set-output name=label::${label}"
+          echo "action_plan=${action}" >> $GITHUB_OUTPUT
+          echo "nextlabel=${nextlabel}" >> $GITHUB_OUTPUT
+          echo "label=${label}" >> $GITHUB_OUTPUT
 
       # Report as PR comment the output of validations
       - name: Report Validations Output
-        uses: actions/github-script@v4
+        uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.BOT_TOKEN }}
           script: |
@@ -152,7 +152,7 @@ jobs:
             
             *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Working Directory: \`${{ env.tf_actions_working_dir }}\`, Workflow: \`${{ github.workflow }}\`*`;
               
-            github.issues.createComment({
+            github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -175,7 +175,7 @@ jobs:
           token: ${{ secrets.BOT_TOKEN }}
 
       # Install Terraform
-      - uses: hashicorp/setup-terraform@v1
+      - uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.1.7
 
@@ -214,7 +214,7 @@ jobs:
 
       # Report the plan output to PR as new Comment
       - name: Report Plan Output
-        uses: actions/github-script@v4
+        uses: actions/github-script@v6
         env:
           PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
         with:
@@ -234,7 +234,7 @@ jobs:
             
             *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Working Directory: \`${{ env.tf_actions_working_dir }}\`, Workflow: \`${{ github.workflow }}\`*`;
               
-            github.issues.createComment({
+            github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -257,7 +257,7 @@ jobs:
 
       # Report the apply output to the PR as new comment
       - name: Report terraform apply output
-        uses: actions/github-script@v4
+        uses: actions/github-script@v6
         env:
           APPLY: "terraform apply\n${{ steps.apply.outputs.stdout }}"
         with:
@@ -278,7 +278,7 @@ jobs:
             
             *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Working Directory: \`${{ env.tf_actions_working_dir }}\`, Workflow: \`${{ github.workflow }}\`*`;
               
-            github.issues.createComment({
+            github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -288,7 +288,7 @@ jobs:
       # Fail the workflow if the plan or apply was not success
       - name: Fail the workflow
         if: ${{ steps.plan.outcome != 'success' || steps.apply.outcome != 'success' }}
-        uses: actions/github-script@v3
+        uses: actions/github-script@v6
         with:
           script: |
             core.setFailed('Plan or Apply for Deploy was not successful!')
@@ -312,7 +312,7 @@ jobs:
           ref: master
 
       # Install Terraform
-      - uses: hashicorp/setup-terraform@v1
+      - uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.1.7
 
@@ -322,7 +322,7 @@ jobs:
         run: |
           label=$(cat .tier_enabled)
 
-          echo "::set-output name=label::${label}"
+          echo "label=${label}" >> $GITHUB_OUTPUT
 
       # Will force a make close-traffic on current
       - name: Close Traffic on master
@@ -364,7 +364,7 @@ jobs:
 
       # Print Plan Output to PR as comment
       - name: Report Plan Output
-        uses: actions/github-script@v4
+        uses: actions/github-script@v6
         env:
           PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
         with:
@@ -384,7 +384,7 @@ jobs:
             
             *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Working Directory: \`${{ env.tf_actions_working_dir }}\`, Workflow: \`${{ github.workflow }}\`*`;
               
-            github.issues.createComment({
+            github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -407,7 +407,7 @@ jobs:
 
       # Print Terraform apply Output as comment to PR
       - name: Report terraform apply output
-        uses: actions/github-script@v4
+        uses: actions/github-script@v6
         env:
           APPLY: "terraform apply\n${{ steps.apply.outputs.stdout }}"
         with:
@@ -428,7 +428,7 @@ jobs:
             
             *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Working Directory: \`${{ env.tf_actions_working_dir }}\`, Workflow: \`${{ github.workflow }}\`*`;
               
-            github.issues.createComment({
+            github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -438,7 +438,7 @@ jobs:
       # Fail the workflow if the plan or apply was not success
       - name: Fail the workflow
         if: ${{ steps.plan.outcome != 'success' || steps.apply.outcome != 'success' }}
-        uses: actions/github-script@v3
+        uses: actions/github-script@v6
         with:
           script: |
             core.setFailed('Plan or Apply for Deploy was not successful!')
@@ -450,11 +450,11 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ needs.plan.outputs.auto_approve == 'true' }}
     steps:
-      - uses: actions/github-script@v4
+      - uses: actions/github-script@v6
         with:
           github-token: ${{secrets.BOT_TOKEN}}
           script: |
-            github.issues.addLabels({
+            github.rest.issues.addLabels({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -477,11 +477,11 @@ jobs:
         run: |
           count=$(yq e '.requiredReviewers' OWNERS)
           reviewers_as_json=$(yq e -j -I=0 '.reviewers' OWNERS)
-          echo "::set-output name=count::$count"
-          echo "::set-output name=as_json::$reviewers_as_json"
+          echo "count=$count" >> $GITHUB_OUTPUT
+          echo "as_json=$reviewers_as_json" >> $GITHUB_OUTPUT
 
       - name: Add review and approval labels
-        uses: actions/github-script@v4
+        uses: actions/github-script@v6
         with:
           github-token: ${{secrets.BOT_TOKEN}}
           script: |
@@ -502,14 +502,14 @@ jobs:
               }
             }
 
-            github.pulls.requestReviewers({
+            github.rest.pulls.requestReviewers({
               pull_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
               reviewers: reviewers
             });
 
-            github.issues.addLabels({
+            github.rest.issues.addLabels({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -529,12 +529,12 @@ jobs:
     steps:
       - name: Set DO-NOT-MERGE if not in last step
         id: check
-        uses: actions/github-script@v4
+        uses: actions/github-script@v6
         with:
           github-token: ${{secrets.BOT_TOKEN}}
           result-encoding: string
           script: |
-            const {data: pullLabels} = await github.issues.listLabelsOnIssue({
+            const {data: pullLabels} = await github.rest.issues.listLabelsOnIssue({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo
@@ -551,7 +551,7 @@ jobs:
             }
 
             if ( ! is_mergeable ) {
-              github.issues.addLabels({
+              github.rest.issues.addLabels({
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
@@ -569,19 +569,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # Install terraform
-      - uses: hashicorp/setup-terraform@v1
+      - uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.1.7
 
       # Get pull request base
       - name: Get Pull Request BASE Ref
-        uses: actions/github-script@v4
+        uses: actions/github-script@v6
         id: the_pull
         with:
           github-token: ${{secrets.BOT_TOKEN}}
           result-encoding: string
           script: |
-            const {data: thePull} = await github.pulls.get({
+            const {data: thePull} = await github.rest.pulls.get({
               pull_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo
@@ -603,7 +603,7 @@ jobs:
           if [ -f .tier_enabled ] ; then
             tier=$(cat .tier_enabled) 
           fi
-          echo "::set-output name=tier::$tier"
+          echo "tier=$tier" >> $GITHUB_OUTPUT
 
       - name: Terraform Init
         id: init
@@ -649,7 +649,7 @@ jobs:
           GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
 
       - name: Report terraform apply output
-        uses: actions/github-script@v4
+        uses: actions/github-script@v6
         env:
           PLAN: "terraform plan ${{ steps.tier_to_run.outputs.tier }}\n${{ steps.plan.outputs.stdout }}"
           APPLY: "terraform apply ${{ steps.tier_to_run.outputs.tier }}\n${{ steps.apply.outputs.stdout }}"
@@ -673,7 +673,7 @@ jobs:
             
             *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Working Directory: \`${{ env.tf_actions_working_dir }}\`, Workflow: \`${{ github.workflow }}\`*`;
               
-            github.issues.createComment({
+            github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -689,19 +689,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # Install terraform
-      - uses: hashicorp/setup-terraform@v1
+      - uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.1.7
 
       # Get pull request head
       - name: Get Pull Request HEAD Ref
-        uses: actions/github-script@v4
+        uses: actions/github-script@v6
         id: the_pull
         with:
           github-token: ${{secrets.BOT_TOKEN}}
           result-encoding: string
           script: |
-            const {data: thePull} = await github.pulls.get({
+            const {data: thePull} = await github.rest.pulls.get({
               pull_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo
@@ -723,7 +723,7 @@ jobs:
           if [ -f .tier_enabled ] ; then
             tier=$(cat .tier_enabled) 
           fi
-          echo "::set-output name=tier::$tier"
+          echo "tier=$tier" >> $GITHUB_OUTPUT
 
       - name: Terraform Init
         id: init
@@ -772,7 +772,7 @@ jobs:
           GITHUB_API_TOKEN: ${{ secrets.BOT_TOKEN }}
 
       - name: Report terraform apply output
-        uses: actions/github-script@v4
+        uses: actions/github-script@v6
         env:
           PLAN: "terraform plan ${{ steps.tier_to_run.outputs.tier }}\n${{ steps.plan.outputs.stdout }}"
           APPLY: "terraform apply ${{ steps.tier_to_run.outputs.tier }}\n${{ steps.apply.outputs.stdout }}"
@@ -796,7 +796,7 @@ jobs:
             
             *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Working Directory: \`${{ env.tf_actions_working_dir }}\`, Workflow: \`${{ github.workflow }}\`*`;
               
-            github.issues.createComment({
+            github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -814,17 +814,17 @@ jobs:
     if: needs.plan.outputs.bluegreen_action == 'rollback'
     steps:
       - name: Closes the Pull Request
-        uses: actions/github-script@v4
+        uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.BOT_TOKEN }}
           script: |
-            const {data: thePull} = await github.pulls.get({
+            const {data: thePull} = await github.rest.pulls.get({
               pull_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
             })
 
-            github.pulls.update({
+            github.rest.pulls.update({
               pull_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
