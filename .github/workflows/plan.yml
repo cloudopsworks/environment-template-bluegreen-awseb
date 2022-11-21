@@ -35,7 +35,7 @@ jobs:
       bluegreen_action: ${{ steps.bluegreen.outputs.action_plan }}
     steps:
       # Automatic Labeling from .github/labeler.yml
-      - uses: actions/labeler@v3
+      - uses: actions/labeler@v4
         with:
           repo-token: ${{ secrets.BOT_TOKEN }}
 
@@ -49,7 +49,7 @@ jobs:
           echo "repo_name=$repo_name" >> $GITHUB_OUTPUT
 
       # Source Checkout from PR Head
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           token: ${{ secrets.BOT_TOKEN }}
 
@@ -170,7 +170,7 @@ jobs:
     if: needs.plan.outputs.bluegreen_action != 'rollback'
     steps:
       # Check out of the PR HEAD (default)
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           token: ${{ secrets.BOT_TOKEN }}
 
@@ -306,7 +306,7 @@ jobs:
     if: needs.plan.outputs.bluegreen_action == 'close_old'
     steps:
       # Checkout of master branch
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           token: ${{ secrets.BOT_TOKEN }}
           ref: master
@@ -468,7 +468,7 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ needs.plan.outputs.auto_approve != 'true' }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           token: ${{ secrets.BOT_TOKEN }}
 
@@ -589,7 +589,7 @@ jobs:
             return thePull.base.ref;
 
       # Proceed with checkout of source with all the references (depth=0)  
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
           ref: ${{ steps.the_pull.outputs.result }}
@@ -709,7 +709,7 @@ jobs:
             return thePull.head.ref;
 
       # Proceed with checkout of source with all the references (depth=0)  
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
           ref: ${{ steps.the_pull.outputs.result }}
